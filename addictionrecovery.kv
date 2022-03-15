@@ -1,0 +1,54 @@
+<ProfileScreen>:
+    GridLayout:
+        cols:1
+
+        Label:
+            text: "Profile"
+
+        Button:
+            text: "Return to Menu"
+            on_press: root.manager.current = 'menu'
+
+<LoggingScreen>:
+    GridLayout:
+        cols:1
+
+        Label:
+            text: "Logging"
+
+        Button:
+            text: "Return to Menu"
+            on_press: root.manager.current = 'menu'
+
+<GraphScreen>:
+    GridLayout:
+        cols:1
+
+        Label:
+            text: "Graph"
+
+        Button:
+            text: "Return to Menu"
+            on_press: root.manager.current = 'menu'
+
+<MenuScreen>:
+    GridLayout:
+        cols:1
+
+        Label:
+            text: "Welcome to our Addiction Recovery App"
+
+
+        Button:
+            text: "Profile"
+            on_press: root.manager.current = 'profile'
+
+
+        Button:
+            text: "Logging"
+            on_press: root.manager.current = 'logging'
+
+
+        Button:
+            text: "Graphs"
+            on_press: root.manager.current = 'graph'
