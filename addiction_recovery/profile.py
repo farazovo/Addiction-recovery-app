@@ -28,5 +28,17 @@ class profile:
         return age
 
     def recacl_age(self):
+        #used for the fact that when a day changes the age may aswell
         self.age=calculate_age(date(self.DOB))
 
+    def return_name(self):
+         return self.name
+
+    def return_weight(self):
+        return self.weight
+
+    def return_height(self):
+        return self.height
+
+    def return_age(self):
+        return self.age
