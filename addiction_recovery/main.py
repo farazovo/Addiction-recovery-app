@@ -9,8 +9,9 @@ from kivy.properties import ObjectProperty
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
 
+from repository import SqlRepository, Repository
 
-# Declare both screens
+
 class MenuScreen(Screen):
     pass
 
@@ -38,6 +39,14 @@ class AddictionRecovery(App):
         sm.add_widget(GraphScreen(name='graph'))
 
         return sm
+
+    def on_start(self):
+        if not SqlRepository().start():
+            # TODO: add error popup
+            pass
+
+    def on_stop(self):
+        Repository.instance.close()
 
 
 if __name__ == '__main__':
