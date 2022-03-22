@@ -5,10 +5,13 @@
         Label:
             text: "Profile"
 
+        Label:
+            text:"Name: \nWeight: \nHeight: \nAge: "    
+
         Button:
             text: "Return to Menu"
             on_press: root.manager.current = 'menu'
-
+ 
 <LoggingScreen>:
     GridLayout:
         cols:1
@@ -52,3 +55,7 @@
         Button:
             text: "Graphs"
             on_press: root.manager.current = 'graph'
+
+        Button:
+            text: "Exit App"
+            on_press: app.stop()
