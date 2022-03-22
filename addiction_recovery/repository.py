@@ -112,3 +112,19 @@ class SqlRepository(Repository):
     def close(self):
         if self.connection:
             self.connection.close()
+            
+    def write(self, tableName, data):
+	    self.connection = sqlite3.connect("statistics.db")
+		self.cursor = self.connection.cursor()
+		self.cursor.execute("INSERT INTO (:tableName) VALUES (:data)", 
+		{
+			'tableName': tableName,
+			'data': data,
+		})	
+		self.connection.commit()
+		self.close()
+    def basics(self, name, weight, height):
+		self.write(user, name)
+		self.write(user, weight)
+		self.write(user, height)
+       
