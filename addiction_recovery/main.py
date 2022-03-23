@@ -46,7 +46,8 @@ class AddictionRecovery(App):
             pass
 
     def on_stop(self):
-        Repository.instance.close()
+        if Repository.instance:
+            Repository.instance.close()
 
 
 if __name__ == '__main__':

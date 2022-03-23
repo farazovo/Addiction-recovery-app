@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import sqlite3
+from typing import Iterable, List, Tuple
 
 
 class Repository(ABC):
@@ -14,10 +15,12 @@ class Repository(ABC):
         Repository.instance = self
 
     @abstractmethod
-    def start(self): pass
+    def start(self) -> bool: pass
 
     @abstractmethod
-    def close(self): pass
+    def close(self):
+        if Repository.instance == self:
+            Repository.instance = None
 
 
 class SqlRepository(Repository):
@@ -31,7 +34,7 @@ class SqlRepository(Repository):
         self.connection = None
         self.cursor = None
 
-    def start(self, filepath="database.db"):
+    def start(self, filepath="database.db") -> bool:
         """
         Initialises the connection to the database and creates tables if needed.
 
@@ -44,6 +47,9 @@ class SqlRepository(Repository):
             self.cursor = self.connection.cursor()
 
             # Create the tables for the first start-up
+            # Doesn't use self.try_execute_command() as this commits after every command.
+            # This will leave the database in an invalid state if there is an error after one of
+            # the commands.
             self.cursor.execute("""
                 CREATE TABLE IF NOT EXISTS Person (
                     id INTEGER PRIMARY KEY,
@@ -110,5 +116,51 @@ class SqlRepository(Repository):
         return True
 
     def close(self):
+        super().close()
         if self.connection:
             self.connection.close()
+            self.connection = None
+            self.cursor = None
+
+    def try_execute_command(self, command: str, parameters: Iterable = ...) -> bool:
+        """
+        Attempts to execute an SQL command without throwing an exception if there is an error.
+
+        :param command: the SQL command to be executed
+        :param parameters: the parameters that are to be supplied to the SQL command
+        :return: a bool of whether the command was executed without errors
+        """
+        try:
+            self.cursor.execute(command, parameters)
+            self.connection.commit()
+            return True
+        except sqlite3.Error as e:
+            if parameters is ...:
+                print(f"\033[91m Error in executing command '{command}' : {e.args} \033[0m")
+            else:
+                print(
+                    f"\033[91m Error in executing command '{command}'\
+                    with parameters '{parameters}' : {e.args} \033[0m"
+                )
+            return False
+
+    def try_execute_query(self, query: str, parameters: Iterable = ...) -> List[Tuple]:
+        """
+        Attempts to execute an SQL query without throwing an exception if there is an error.
+
+        :param query: the SQL query to be executed
+        :param parameters: the parameters that are to be supplied to the SQL query
+        :return: A list of tuples that represent the rows that matched the query
+        """
+        try:
+            self.cursor.execute(query, parameters)
+            return self.cursor.fetchall()
+        except sqlite3.Error as e:
+            if parameters is ...:
+                print(f"\033[91m Error in executing query '{query}' : {e.args} \033[0m")
+            else:
+                print(
+                    f"\033[91m Error in executing query '{query}'\
+                    with parameters '{parameters}' : {e.args} \033[0m"
+                )
+            return []
