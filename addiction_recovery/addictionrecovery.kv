@@ -1,17 +1,52 @@
 <ProfileScreen>:
+
+    person_name:person_name
+	weight:weight
+	person_height:person_height
+	birth:birth
+
     GridLayout:
         cols:1
+		size: root.width, root.height
+		GridLayout:
+			cols:2
 
-        Label:
-            text: "Profile"
+			Label:
+				text: "Enter your Name"
+			TextInput:
+				id: person_name
+				multiline:False
 
-        Label:
-            text:"Name: \nWeight: \nHeight: \nAge: "    
+			Label:
+				text: "Enter your Weight(kg)"
+			TextInput:
+				id: weight
+				multiline:False
 
-        Button:
-            text: "Return to Menu"
-            on_press: root.manager.current = 'menu'
- 
+			Label:
+				text: "Enter your Height(cm)"
+			TextInput:
+				id: person_height
+				multiline:False
+
+		    Label:
+				text: "Enter your Date of Birth in (year, month, day) format"
+			TextInput:
+				id: birth
+				multiline:False
+
+        GridLayout:
+			cols:2
+
+			Button:
+                text: "Return to Menu"
+                on_press: root.manager.current = 'menu'
+
+            Button:
+                text: "Submit"
+                on_press: root.press()
+
+
 <LoggingScreen>:
     GridLayout:
         cols:1
