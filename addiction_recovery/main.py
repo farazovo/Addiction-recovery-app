@@ -17,7 +17,13 @@ class MenuScreen(Screen):
 
 
 class ProfileScreen(Screen):
-    pass
+    def press(self):
+        person_name = self.person_name.text
+        weight = self.weight.text
+        person_height = self.person_height.text
+        birth = self.birth.text
+
+        print(f"Your name is {person_name} and you have a weight of {weight}, a height of {person_height} and your birthday is {birth}")
 
 
 class LoggingScreen(Screen):
