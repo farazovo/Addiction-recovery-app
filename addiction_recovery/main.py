@@ -17,14 +17,27 @@ class MenuScreen(Screen):
 
 
 class ProfileScreen(Screen):
-    def press(self):
+    
+    #when page loads run assign hint text with database values
+    
+    def Submit(self):
         person_name = self.person_name.text
         weight = self.weight.text
         person_height = self.person_height.text
         birth = self.birth.text
-
+        
         print(f"Your name is {person_name} and you have a weight of {weight}, a height of {person_height} and your birthday is {birth}")
-
+        #update the data base with new values
+        
+        self.AssignHintText(person_name,weight,person_height,birth)
+    
+    def AssignHintText(self,name,weight,height,birth):
+        #assign all the hint text 
+        self.person_name.hint_text=name
+        self.weight.hint_text=weight
+        self.person_height.hint_text=height
+        self.birth.hint_text=birth
+        
 
 class LoggingScreen(Screen):
     pass
