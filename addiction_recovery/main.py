@@ -31,6 +31,8 @@ class ProfileScreen(Screen):
         print(f"Your name is {person_name} and you have a weight of {weight}, a height of {person_height} and your birthday is {birth}")
         #update the data base with new values
 
+        self.AssignHintText(person_name,weight,person_height,birth)
+        
         try:
             person = entities.Person(person_name, int(weight), int(person_height), datetime.datetime.strptime(birth, "%Y/%m/%d").timestamp())
         except ValueError as e:
@@ -38,7 +40,6 @@ class ProfileScreen(Screen):
             return
         person_id = Repository.instance.create_person(person)
         
-        self.AssignHintText(person_name,weight,person_height,birth)
     
     def AssignHintText(self,name,weight,height,birth):
         #assign all the hint text 
