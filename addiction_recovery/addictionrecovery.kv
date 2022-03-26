@@ -8,6 +8,7 @@
     GridLayout:
         cols:1
         size: root.width, root.height
+
         GridLayout:
             cols:2
 
@@ -47,8 +48,57 @@
     GridLayout:
         cols:1
 
-        Label:
-            text: "Logging"
+        size: root.width, root.height
+
+        GridLayout:
+            cols:2
+            
+            GridLayout:
+                cols:3
+                
+                Button:
+                    text: "preset"
+                    on_press: root.manager.current = 'menu'
+                Button:
+                    text: "preset"
+                    on_press: root.manager.current = 'menu'
+                Button:
+                    text: "preset"
+                    on_press: root.manager.current = 'menu'
+
+                Button:
+                    text: "preset"
+                    on_press: root.manager.current = 'menu'
+                Button:
+                    text: "preset"
+                    on_press: root.manager.current = 'menu'
+                Button:
+                    text: "preset"
+                    on_press: root.manager.current = 'menu'
+
+                Button:
+                    text: "preset"
+                    on_press: root.manager.current = 'menu'
+                Button:
+                    text: "preset"
+                    on_press: root.manager.current = 'menu'
+                Button:
+                    text: "preset"
+                    on_press: root.manager.current = 'menu'
+
+                Button:
+                    text: "Current Presets"
+                    on_press: root.manager.current = 'menu'
+                Button:
+                    text: "Add New Preset"
+                    on_press: root.manager.current = 'menu'
+                Button:
+                    text: "Manual Entry"
+                    on_press: root.manager.current = 'menu'
+
+        Button:
+            text: "Submit"
+            on_press: root.manager.current = 'menu'
 
         Button:
             text: "Return to Menu"
