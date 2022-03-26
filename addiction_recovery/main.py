@@ -8,7 +8,9 @@ from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
+import datetime
 
+import entities
 from repository import SqlRepository, Repository
 
 
@@ -28,6 +30,13 @@ class ProfileScreen(Screen):
         
         print(f"Your name is {person_name} and you have a weight of {weight}, a height of {person_height} and your birthday is {birth}")
         #update the data base with new values
+
+        try:
+            person = entities.Person(person_name, int(weight), int(person_height), datetime.datetime.strptime(birth, "%Y/%m/%d").timestamp())
+        except ValueError as e:
+            # TODO: show error popup
+            return
+        person_id = Repository.instance.create_person(person)
         
         self.AssignHintText(person_name,weight,person_height,birth)
     
