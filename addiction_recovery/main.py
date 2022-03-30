@@ -122,18 +122,10 @@ class AddictionRecovery(App):
         return sm
 
     def on_start(self):
-        if not SqlRepository().start():
+        if not Repository.instance:
             # TODO: add error popup
             pass
 
-        # Repository.instance.create_substance_use(SubstanceUse(1, 3, t := t + 1))
-        # Repository.instance.create_substance_use(SubstanceUse(1, 3, t := t + 1))
-        # Repository.instance.create_substance_use(SubstanceUse(1, 4, t := t + 1))
-        # Repository.instance.create_substance_use(SubstanceUse(1, 5, t := t + 1))
-        # Repository.instance.create_substance_use(SubstanceUse(1, 5, t := t + 1))
-        # Repository.instance.create_substance_use(SubstanceUse(1, 5, t := t + 1))
-        # Repository.instance.create_substance_use(SubstanceUse(1, 3, 16))
-        # Repository.instance.create_substance_use(SubstanceUse(1, 3, 17))
 
         print(Repository.instance.get_common_substance_amounts(1, 3))
 
