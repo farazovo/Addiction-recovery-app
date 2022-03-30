@@ -50,6 +50,9 @@
 
         size: root.width, root.height
 
+        Label:
+            text: "Manual Entry:"
+
         GridLayout:
             cols:2
             
@@ -95,6 +98,13 @@
                 Button:
                     text: "Manual Entry"
                     on_press: root.manager.current = 'menu'
+
+        Label:
+            text: "Presets:"
+
+        SubstancePresets:
+            rows: 1
+            cols: 3
 
         Button:
             text: "Submit"

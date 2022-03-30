@@ -16,7 +16,7 @@ class Person:
 
     def calculate_age(self) -> int:
         dob_datetime = datetime.datetime.fromtimestamp(self.dob)
-        return int((datetime.date.today() - dob_datetime).days / 365.2425)
+        return int((datetime.datetime.today() - dob_datetime).days / 365.2425)
 
 
 @dataclass

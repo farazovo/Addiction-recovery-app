@@ -77,6 +77,23 @@ class Repository(ABC):
     @abstractmethod
     def get_goal_type(self, goal_type_id: int) -> Optional[GoalType]: pass
 
+    @abstractmethod
+    def get_common_substance_amounts(self, tracking_id: int, count: int) -> List[SubstanceAmount]:
+        """
+        Gets the most commonly used substance amounts for quick access.
+
+        :param tracking_id: the id of the substance tracking that the substance amounts are for.
+        :param count: the maximum number of substance amounts to be returned.
+        :return: A list of SubstanceAmount objects
+        """
+
+    @abstractmethod
+    def get_substance_amount_from_data(self, amount: int, cost: int) -> Optional[SubstanceAmount]:
+        """
+        Gets a substance amount from the amount and cost, returning a SubstanceAmount data class if
+        a match was found.
+        """
+
 
 class SqlRepository(Repository):
     """
@@ -323,4 +340,33 @@ class SqlRepository(Repository):
     def get_goal_type(self, goal_type_id: int) -> Optional[GoalType]:
         if data := self.get_entity("GoalType", goal_type_id):
             return GoalType(*data)
+        return None
+
+    def get_common_substance_amounts(self, tracking_id: int, count: int) -> List[SubstanceAmount]:
+        substance_amounts = self.try_execute_query(
+            """
+            SELECT SubstanceAmount.*
+            FROM SubstanceAmount, (
+                SELECT SubstanceUse.amount_id, COUNT(*) AS uses
+                FROM SubstanceUse
+                WHERE SubstanceUse.substance_tracking_id = ?
+                GROUP BY SubstanceUse.amount_id
+                ORDER BY uses DESC
+                LIMIT ?
+            ) AS CommonAmounts
+            WHERE CommonAmounts.amount_id = SubstanceAmount.id
+            ORDER BY CommonAmounts.uses DESC;
+            """,
+            (tracking_id, count)
+        )
+        return [SubstanceAmount(*s[1:], s[0]) for s in substance_amounts]
+
+    def get_substance_amount_from_data(self, amount: int, cost: int) -> Optional[SubstanceAmount]:
+        substance_amounts = self.try_execute_query(
+            "SELECT * FROM SubstanceAmount WHERE amount = ? AND cost = ?",
+            (amount, cost)
+        )
+        if len(substance_amounts):
+            # Unpack and reorder tuple to put id last
+            return SubstanceAmount(*substance_amounts[0][1:], substance_amounts[0][0])
         return None
