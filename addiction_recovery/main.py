@@ -93,12 +93,27 @@ class SubstancePresets(GridLayout):
             self.show_no_presets()
             return
         for preset in presets:
-            # TODO: add functioning button
-            self.add_widget(Button(text=f"amount: {preset.amount}, cost: £{preset.cost / 100}"))
+            self.add_widget(PresetButton(preset))
 
     def show_no_presets(self):
         self.clear_widgets()
         self.add_widget(Label(text="Manually enter data to create presets."))
+
+
+class PresetButton(Button):
+    """ Button that is used to record a substance use in the data repository. """
+
+    def __init__(self, preset: entities.SubstanceAmount, **kwargs):
+        super(PresetButton, self).__init__(
+            text=f"amount: {preset.amount}, cost: £{preset.cost / 100}",
+            **kwargs
+        )
+        self.preset = preset
+
+    def on_press(self):
+        # TODO: use correct substance_tracking_id and time
+        use = entities.SubstanceUse(1, self.preset.id, 1)
+        Repository.instance.create_substance_use(use)
 
 
 class GraphScreen(Screen):
@@ -125,9 +140,6 @@ class AddictionRecovery(App):
         if not Repository.instance:
             # TODO: add error popup
             pass
-
-
-        print(Repository.instance.get_common_substance_amounts(1, 3))
 
     def on_stop(self):
         if Repository.instance:
