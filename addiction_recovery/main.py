@@ -8,6 +8,7 @@ from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty, ListProperty, NumericProperty
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
+from plyer import notification
 import datetime
 
 import entities
@@ -102,16 +103,18 @@ class SubstancePresets(GridLayout):
 
 class PresetButton(Button):
     """ Button that is used to record a substance use in the data repository. """
-
+    
     def __init__(self, preset: entities.SubstanceAmount, **kwargs):
         super(PresetButton, self).__init__(
+            static self.lastDateUsed = datetime.datetime.now()
             text=f"amount: {preset.amount}, cost: £{preset.cost / 100}",
             **kwargs
         )
         self.preset = preset
 
     def on_press(self):
-        # TODO: use correct substance_tracking_id and time
+        # TODO: use correct substance_tracking_id
+        self.lastDateUsed = datetime.datetime.now()
         use = entities.SubstanceUse(1, self.preset.id, 1)
         Repository.instance.create_substance_use(use)
 
@@ -123,6 +126,7 @@ class GraphScreen(Screen):
 class AddictionRecovery(App):
 
     def build(self):
+        self.notifsent = False
         # Setup data repository
         if not SqlRepository().start():
             Repository.instance = None
@@ -142,9 +146,26 @@ class AddictionRecovery(App):
             pass
 
     def on_stop(self):
+       self.saveandclose()
+    def on_pause(self):
+        #Runs every frame while the app is sleeping
+        self.saveandclose()
+        now = dateTime.dateTime.now()
+        timedifference = (1440*now.day + 60*now.hour + now.minute) - (1440*PresetButton.lastdateused.day + 60*PresetButton.lastdateused.hour + PresetButton.lastdateused.minute)
+        if (timedifference > 1440):
+            notify("Check-In", "Let us know how you're doing", "We need an app name here"', "nonexistantappicon.png", timeout=10, "Let us know how you're doing", False)
+            PresetButton.lastdateused = dateTime.dateTime.now()
+        elif (timedifference > 60):
+            notify("Check-In", "How are you recovering from your last intake?", "We need an app name here"', "nonexistantappicon.png", timeout=10, "Let us know how you're doing", False)
+            PresetButton.lastdateused = dateTime.dateTime.now()
+        return True
+
+   def on_resume(self):
+      # If any data might need replacing (which it probably won't)
+      pass
+   def save_and_close(self):
         if Repository.instance:
             Repository.instance.close()
-
 
 if __name__ == '__main__':
     AddictionRecovery().run()
