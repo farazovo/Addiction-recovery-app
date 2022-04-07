@@ -45,74 +45,93 @@
 
 
 <LoggingScreen>:
+
+    substance:substance
+    amount:amount
+    cost:cost
+    specific_name:specific_name
+
     GridLayout:
         cols:1
 
         size: root.width, root.height
 
         Label:
-            text: "Manual Entry:"
+            text: "Please enter your intake below:"
 
         GridLayout:
             cols:2
-            
+
             GridLayout:
-                cols:3
-                
-                Button:
-                    text: "preset"
-                    on_press: root.manager.current = 'menu'
-                Button:
-                    text: "preset"
-                    on_press: root.manager.current = 'menu'
-                Button:
-                    text: "preset"
-                    on_press: root.manager.current = 'menu'
+                cols:1
+                size: root.width, root.height
+
+                GridLayout:
+                    cols:2
+
+                    Label:
+                        text: "Select the Substance:"
+                    Spinner:
+                        id:substance
+                        text: "Choose Substance"
+                        values: ["Alcohol","Coffee"]
+                        on_text: root.spinner_clicked(substance.text)
+
+                    Label:
+                        text: "Enter the amount taken:"
+                    TextInput:
+                        id: amount
+                        multiline:False
+
+                    Label:
+                        text: "Enter how much it cost:"
+                    TextInput:
+                        id: cost
+                        multiline:False
+
+                    Label:
+                        text: "Enter the specific type (if any):"
+                    TextInput:
+                        id: specific_name
+                        multiline:False
+
+        GridLayout:
+            cols:2
+
+            Label:
+                text: "Presets:"
+
+
+            GridLayout:
+                cols:2
 
                 Button:
-                    text: "preset"
+                    text: "Preset 1"
                     on_press: root.manager.current = 'menu'
                 Button:
-                    text: "preset"
+                    text: "Preset 2"
                     on_press: root.manager.current = 'menu'
                 Button:
-                    text: "preset"
+                    text: "Preset 3"
+                    on_press: root.manager.current = 'menu'
+                Button:
+                    text: "Preset 4"
                     on_press: root.manager.current = 'menu'
 
-                Button:
-                    text: "preset"
-                    on_press: root.manager.current = 'menu'
-                Button:
-                    text: "preset"
-                    on_press: root.manager.current = 'menu'
-                Button:
-                    text: "preset"
-                    on_press: root.manager.current = 'menu'
+        #SubstancePresets:
+        #    rows: 1
+        #    cols: 3
 
-                Button:
-                    text: "Current Presets"
-                    on_press: root.manager.current = 'menu'
-                Button:
-                    text: "Add New Preset"
-                    on_press: root.manager.current = 'menu'
-                Button:
-                    text: "Manual Entry"
-                    on_press: root.manager.current = 'menu'
+        GridLayout:
+            cols:2
 
-        Label:
-            text: "Presets:"
+            Button:
+                text: "Return to Menu"
+                on_press: root.manager.current = 'menu'
 
-        SubstancePresets:
-            rows: 1
-            cols: 3
-
-        Button:
-            text: "Submit"
-            on_press: root.manager.current = 'menu'
-
-        Button:
-            text: "Return to Menu"
-            on_press: root.manager.current = 'menu'
+            Button:
+                text: "Submit"
+                on_press: root.Submit()
 
 <GraphScreen>:
     GridLayout:
