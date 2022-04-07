@@ -59,6 +59,7 @@ class ProfileScreen(Screen):
 
 
 class LoggingScreen(Screen):
+
     def on_pre_enter(self, *args):
         self.update_presets()
 
@@ -66,6 +67,18 @@ class LoggingScreen(Screen):
         for widget in self.walk():
             if isinstance(widget, SubstancePresets):
                 widget.update_presets()
+
+    def Submit(self):
+        substance = self.substance.text
+        amount = self.amount.text
+        cost = self.cost.text
+        specific_name = self.specific_name.text
+
+        print(
+            f"You have logged an intake of {amount} of {substance}, specifically {specific_name}, that costed £{cost}")
+
+    def spinner_clicked(self, value):
+        print(value)
 
 
 class SubstancePresets(GridLayout):
