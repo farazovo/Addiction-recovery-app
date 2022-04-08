@@ -38,7 +38,7 @@
 
             Button:
                 text: "Return to Menu"
-                on_press: root.manager.current = 'menu'
+                on_press: root.return_to_menu()
             Button:
                 text: "Submit"
                 on_press: root.Submit()
@@ -101,26 +101,9 @@
             Label:
                 text: "Presets:"
 
-
-            GridLayout:
-                cols:2
-
-                Button:
-                    text: "Preset 1"
-                    on_press: root.manager.current = 'menu'
-                Button:
-                    text: "Preset 2"
-                    on_press: root.manager.current = 'menu'
-                Button:
-                    text: "Preset 3"
-                    on_press: root.manager.current = 'menu'
-                Button:
-                    text: "Preset 4"
-                    on_press: root.manager.current = 'menu'
-
-        #SubstancePresets:
-        #    rows: 1
-        #    cols: 3
+            SubstancePresets:
+                rows: 4
+                cols: 1
 
         GridLayout:
             cols:2

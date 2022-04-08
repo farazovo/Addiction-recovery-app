@@ -78,7 +78,7 @@ class Repository(ABC):
     def get_goal_type(self, goal_type_id: int) -> Optional[GoalType]: pass
 
     @abstractmethod
-    def get_common_substance_amounts(self, tracking_id: int, count: int) -> List[SubstanceAmount]:
+    def get_common_substance_amounts(self, count: int) -> List[SubstanceAmount]:
         """
         Gets the most commonly used substance amounts for quick access.
 
@@ -88,11 +88,21 @@ class Repository(ABC):
         """
 
     @abstractmethod
-    def get_substance_amount_from_data(self, amount: int, cost: int) -> Optional[SubstanceAmount]:
+    def get_substance_amount_from_data(
+            self,
+            amount: int,
+            cost: int,
+            name: str,
+            substance_tracking_id: int
+    ) -> Optional[SubstanceAmount]:
         """
-        Gets a substance amount from the amount and cost, returning a SubstanceAmount data class if
+        Gets a substance amount from the amount, cost and name, returning a SubstanceAmount data class if
         a match was found.
         """
+
+    @abstractmethod
+    def get_tracking_id_from_amount(self, preset_id: int) -> int:
+        pass
 
 
 class SqlRepository(Repository):
@@ -161,7 +171,8 @@ class SqlRepository(Repository):
                 CREATE TABLE IF NOT EXISTS SubstanceAmount (
                     id INTEGER PRIMARY KEY,
                     amount REAL,
-                    cost INTEGER
+                    cost INTEGER,
+                    name TEXT
                 );
             """)
             self.cursor.execute("""
@@ -269,8 +280,8 @@ class SqlRepository(Repository):
 
     def create_substance_amount(self, amount: SubstanceAmount) -> int:
         self.try_execute_command(
-            "INSERT INTO SubstanceAmount(amount, cost) VALUES (?, ?);",
-            (amount.amount, amount.cost)
+            "INSERT INTO SubstanceAmount(amount, cost, name) VALUES (?, ?, ?);",
+            (amount.amount, amount.cost, amount.name)
         )
         return self.cursor.lastrowid
 
@@ -342,14 +353,13 @@ class SqlRepository(Repository):
             return GoalType(*data)
         return None
 
-    def get_common_substance_amounts(self, tracking_id: int, count: int) -> List[SubstanceAmount]:
+    def get_common_substance_amounts(self, count: int) -> List[SubstanceAmount]:
         substance_amounts = self.try_execute_query(
             """
             SELECT SubstanceAmount.*
             FROM SubstanceAmount, (
                 SELECT SubstanceUse.amount_id, COUNT(*) AS uses
                 FROM SubstanceUse
-                WHERE SubstanceUse.substance_tracking_id = ?
                 GROUP BY SubstanceUse.amount_id
                 ORDER BY uses DESC
                 LIMIT ?
@@ -357,16 +367,43 @@ class SqlRepository(Repository):
             WHERE CommonAmounts.amount_id = SubstanceAmount.id
             ORDER BY CommonAmounts.uses DESC;
             """,
-            (tracking_id, count)
+            (count,)
         )
         return [SubstanceAmount(*s[1:], s[0]) for s in substance_amounts]
 
-    def get_substance_amount_from_data(self, amount: int, cost: int) -> Optional[SubstanceAmount]:
+    def get_substance_amount_from_data(
+            self,
+            amount: int,
+            cost: int,
+            name: str,
+            substance_tracking_id: int
+    ) -> Optional[SubstanceAmount]:
         substance_amounts = self.try_execute_query(
-            "SELECT * FROM SubstanceAmount WHERE amount = ? AND cost = ?",
-            (amount, cost)
+            """
+            SELECT SubstanceAmount.*
+            FROM SubstanceAmount, SubstanceUse
+            WHERE amount = ?
+                AND cost = ?
+                AND name = ?
+                AND SubstanceUse.amount_id = SubstanceAmount.id
+                AND SubstanceUse.substance_tracking_id = ?;
+            """,
+            (amount, cost, name, substance_tracking_id)
         )
         if len(substance_amounts):
             # Unpack and reorder tuple to put id last
             return SubstanceAmount(*substance_amounts[0][1:], substance_amounts[0][0])
         return None
+
+    def get_tracking_id_from_amount(self, preset_id: int) -> int:
+        tracking_ids = self.try_execute_query(
+            """
+            SELECT substance_tracking_id
+            FROM SubstanceUse
+            WHERE amount_id = ?;
+            """,
+            (preset_id,)
+        )
+        if len(tracking_ids):
+            return tracking_ids[0][0]
+        return -1

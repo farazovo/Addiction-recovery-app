@@ -57,10 +57,11 @@ class SubstanceUse:
 class SubstanceAmount:
     """
     Properties:
-        amount, cost (in pence), id (automatically assigned)
+        amount, cost (in pence), name, id (automatically assigned)
     """
     amount: float
     cost: int
+    name: str
     id: int = None
 
 
