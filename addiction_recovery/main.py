@@ -10,13 +10,16 @@ from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
 from plyer import notification
 import datetime
+import random
 
 import entities
 from repository import SqlRepository, Repository
 
 
 class MenuScreen(Screen):
-    pass
+    def on_pre_enter(self):
+        filename = "motivation\\" + str(Repository.get_substance_tracking(0)) + "\\" + str(random.randrange(1,5)) + ".png"
+        wimg = Image(source=filename)
 
 
 class ProfileScreen(Screen):
@@ -141,13 +144,12 @@ class SubstancePresets(GridLayout):
 
 class PresetButton(Button):
     """ Button that is used to record a substance use in the data repository. """
-
+    lastDateUsed = datetime.datetime.now()
     def __init__(self, preset: entities.SubstanceAmount, **kwargs):
-        # super(PresetButton, self).__init__(
-        #     static self.lastDateUsed = datetime.datetime.now()
-        #     text=f"amount: {preset.amount}, cost: £{preset.cost / 100}",
-        #     **kwargs
-        # )
+        super(PresetButton, self).__init__(
+            text=f"amount: {preset.amount}, cost: £{preset.cost / 100}",
+            **kwargs
+        )
         super(PresetButton, self).__init__(
             text=f"{preset.name}:\namount: {preset.amount}, cost: £{preset.cost / 100}",
             halign="center",
@@ -203,18 +205,17 @@ class AddictionRecovery(App):
         self.save_and_close()
 
     def on_pause(self):
-        pass
-        # #Runs every frame while the app is sleeping
-        # self.saveandclose()
-        # now = datetime.dateTime.now()
-        # timedifference = (1440*now.day + 60*now.hour + now.minute) - (1440*PresetButton.lastdateused.day + 60*PresetButton.lastdateused.hour + PresetButton.lastdateused.minute)
-        # if (timedifference > 1440):
-        #     notify("Check-In", "Let us know how you're doing", "We need an app name here"', "nonexistantappicon.png", timeout=10, "Let us know how you're doing", False)
-        #     PresetButton.lastdateused = datetime.dateTime.now()
-        # elif (timedifference > 60):
-        #     notify("Check-In", "How are you recovering from your last intake?", "We need an app name here"', "nonexistantappicon.png", timeout=10, "Let us know how you're doing", False)
-        #     PresetButton.lastdateused = datetime.dateTime.now()
-        # return True
+        #Runs every frame while the app is sleeping
+        self.saveandclose()
+        now = datetime.dateTime.now()
+        timedifference = (1440*now.day + 60*now.hour + now.minute) - (1440*PresetButton.lastdateused.day + 60*PresetButton.lastdateused.hour + PresetButton.lastdateused.minute)
+        if (timedifference > 1440):
+            notify("Let us know how you're doing")
+            PresetButton.lastdateused = datetime.datetime.now()
+        elif (timedifference > 60):
+            notify("How are you recovering from your last intake")
+            PresetButton.lastdateused = datetime.datetime.now()
+        return True
 
     def on_resume(self):
         # If any data might need replacing (which it probably won't)
@@ -234,7 +235,21 @@ class AddictionRecovery(App):
             AddictionRecovery.substance_tracking_ids[substance_name] = \
                 Repository.instance.create_substance_tracking(substance_tracking)
 
-
+def notify(message):
+    AndroidString = autoclass('java.lang.String')
+    PythonActivity = autoclass('org.kivy.android.PythonActivity')
+    NotificationBuilder = autoclass('android.app.Notification$Builder')
+    Drawable = autoclass('org.test.notify.R$drawable')
+    Context = autoclass('android.content.Context')
+    notification_service = PythonActivity.mActivity.getSystemService(Context.NOTIFICATION_SERVICE)
+    icon = Drawable.icon
+    notification_builder = NotificationBuilder(PythonActivity.mActivity)
+    notification_builder.setContentTitle(AndroidString('Title'.encode('utf-8')))
+    notification_builder.setContentText(AndroidString('Message'.encode('utf-8')))
+    notification_builder.setSmallIcon(icon)
+    notification_builder.setAutoCancel(True)
+    notification_service = PythonActivity.mActivity.getSystemService(PythonActivity.NOTIFICATION_SERVICE)
+    notification_service.notify(0,notification_builder.build())
 
 if __name__ == '__main__':
     AddictionRecovery().run()
