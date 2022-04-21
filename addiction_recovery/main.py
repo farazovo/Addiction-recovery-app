@@ -232,26 +232,26 @@ class SubstanceGraph(Graph):
 
     def __init__(self, **kwargs):
         super(SubstanceGraph, self).__init__(
-            xlabel='Time', ylabel='Amount',
+            xlabel='Time (days)', ylabel='Amount',
             x_ticks_minor=24, x_ticks_major=1,
             y_ticks_major=5,
             y_grid_label=True, x_grid_label=True,
             padding=5,
             x_grid=True, y_grid=True,
-            xmin=0, xmax=0,
-            ymin=0, ymax=0
+            xmin=0, xmax=1,
+            ymin=0, ymax=1
         )
 
         self.current_week_plot = MeshLinePlot(color=[0, 1, 0, 1])
-        self.current_week_plot.points = []
+        self.current_week_plot.points = [(0, 0)]
         self.add_plot(self.current_week_plot)
 
         self.last_week_plot = MeshLinePlot(color=[0, 1, 1, 1])
-        self.last_week_plot.points = []
+        self.last_week_plot.points = [(0, 0)]
         self.add_plot(self.last_week_plot)
 
         self.goal_plot = HBar(color=[1, 0, 0, 1])
-        self.goal_plot.points = []
+        self.goal_plot.points = [0]
         self.add_plot(self.goal_plot)
 
     def update_graph(self):
@@ -300,11 +300,11 @@ class CostGraph(Graph):
             y_grid_label=True, x_grid_label=True,
             padding=5,
             x_grid=True, y_grid=True,
-            xmin=0, xmax=0,
-            ymin=0, ymax=0
+            xmin=0, xmax=1,
+            ymin=0, ymax=1
         )
         self.cost_plot = BarPlot(color=[1, 0, 0, 1])
-        self.cost_plot.points = []
+        self.cost_plot.points = [(0, 0)]
         self.cost_plot.bar_width = -1
         self.add_plot(self.cost_plot)
 
