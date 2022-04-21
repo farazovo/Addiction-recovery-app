@@ -41,6 +41,7 @@ class ProfileScreen(Screen):
         weight = self.weight.text
         person_height = self.person_height.text
         birth = self.birth.text
+        goal = self.goal.text
 
         print(
             f"Your name is {person_name} and you have a weight of {weight}, a height of {person_height} and your birthday is {birth}")
@@ -91,7 +92,6 @@ class LoggingScreen(Screen):
         amount = self.amount.text
         cost = self.cost.text
         specific_name = self.specific_name.text
-        goal = self.goal.text
 
         print(
             f"You have logged an intake of {amount} of {substance}, specifically {specific_name}, that costed £{cost}")
