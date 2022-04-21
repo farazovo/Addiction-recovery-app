@@ -78,6 +78,9 @@ class Repository(ABC):
     def get_goal_type(self, goal_type_id: int) -> Optional[GoalType]: pass
 
     @abstractmethod
+    def get_substances_and_tracking(self, person_id: int) -> List[Tuple[Substance, SubstanceTracking]]: pass
+
+    @abstractmethod
     def get_common_substance_amounts(self, count: int) -> List[SubstanceAmount]:
         """
         Gets the most commonly used substance amounts for quick access.
@@ -103,6 +106,18 @@ class Repository(ABC):
     @abstractmethod
     def get_tracking_id_from_amount(self, preset_id: int) -> int:
         pass
+
+    @abstractmethod
+    def get_uses_from_time_period(
+            self,
+            time_start: int,
+            time_end: int,
+            substance_tracking_id: int
+    ) -> List[Tuple[SubstanceUse, SubstanceAmount]]:
+        """
+        Gets substances uses and amount for the given substance tracking that were recorded during the given
+        period of time.
+        """
 
 
 class SqlRepository(Repository):
@@ -353,6 +368,22 @@ class SqlRepository(Repository):
             return GoalType(*data)
         return None
 
+    def get_substances_and_tracking(self, person_id: int) -> List[Tuple[Substance, SubstanceTracking]]:
+        substances = self.try_execute_query(
+            """
+            SELECT Substance.*, SubstanceTracking.*
+            FROM Substance, SubstanceTracking
+            WHERE SubstanceTracking.substance_id = Substance.id
+                AND SubstanceTracking.person_id = ?
+            ORDER BY Substance.id ASC;
+            """,
+            (person_id,)
+        )
+        return [(
+            Substance(s[1], s[2], s[0]),
+            SubstanceTracking(s[4], s[5], s[3])
+        ) for s in substances]
+
     def get_common_substance_amounts(self, count: int) -> List[SubstanceAmount]:
         substance_amounts = self.try_execute_query(
             """
@@ -407,3 +438,26 @@ class SqlRepository(Repository):
         if len(tracking_ids):
             return tracking_ids[0][0]
         return -1
+
+    def get_uses_from_time_period(
+            self,
+            time_start: int,
+            time_end: int,
+            substance_tracking_id: int
+    ) -> List[Tuple[SubstanceUse, SubstanceAmount]]:
+        use_amounts = self.try_execute_query(
+            """
+            SELECT SubstanceUse.*, SubstanceAmount.*
+            FROM SubstanceUse, SubstanceAmount
+            WHERE SubstanceUse.time > ?
+                AND SubstanceUse.time < ?
+                AND SubstanceUse.substance_tracking_id = ?
+                AND SubstanceAmount.id = SubstanceUse.amount_id
+            ORDER BY SubstanceUse.time ASC;
+            """,
+            (time_start, time_end, substance_tracking_id)
+        )
+        return [(
+            SubstanceUse(s[1], s[2], s[3], s[0]),
+            SubstanceAmount(s[5], s[6], s[7], s[4])
+        ) for s in use_amounts]
