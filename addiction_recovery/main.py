@@ -6,7 +6,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.uix.widget import Widget
-from kivy.properties import ObjectProperty, ListProperty, NumericProperty
+from kivy.properties import ObjectProperty, ListProperty, NumericProperty, StringProperty
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.garden.graph import Graph, MeshLinePlot, BarPlot, HBar
@@ -41,6 +41,7 @@ class ProfileScreen(Screen):
         weight = self.weight.text
         person_height = self.person_height.text
         birth = self.birth.text
+        substance = self.substance.text
         goal = self.goal.text
 
         print(
@@ -54,11 +55,18 @@ class ProfileScreen(Screen):
                 int(person_height),
                 int(datetime.datetime.strptime(birth, "%Y/%m/%d").timestamp())
             )
+            _ = int(goal)
         except ValueError as e:
             # TODO: show error popup
+            print(f"\033[91mInvalid profile inputs \033[0m")
             return
         AddictionRecovery.current_person_id = Repository.instance.create_person(person)
         AddictionRecovery.create_substance_tracking()
+
+        tracking_id = AddictionRecovery.substance_tracking_ids.get(substance)
+        if tracking_id:
+            goal_entity = entities.Goal(tracking_id, 1, int(goal), int(time.time()))
+            Repository.instance.create_goal(goal_entity)
 
         self.AssignHintText(person)
 
@@ -287,8 +295,15 @@ class SubstanceGraph(Graph):
         self.last_week_plot.points = \
             [((use.time - two_week_time) / x_axis_scale, amount.amount) for use, amount in two_week_uses]
 
-        # TODO: use actual goal value
-        self.goal_plot.points = [15]
+        # Display the user's goal
+        goal = Repository.instance.get_goal(1)      # Currently, only one goal is used
+        if goal:
+            if goal.substance_tracking_id == tracking_id:
+                self.goal_plot.points = [goal.value]
+            else:
+                self.goal_plot.points = [0]
+        else:
+            self.goal_plot.points = [0]
 
 
 class CostGraph(Graph):
@@ -345,7 +360,48 @@ class CostGraph(Graph):
 
 
 class GoalsScreen(Screen):
-    pass
+    target_substance = StringProperty("None")
+    weekly_intake = StringProperty("None")
+    target_set_on = StringProperty("Not set")
+    total_days = StringProperty("N/A")
+
+    def on_pre_enter(self, *args):
+        goal = Repository.instance.get_goal(1)  # Currently, only one goal is used
+        self.set_default_values()
+        if not goal:
+            return
+
+        # Display the target substance
+        for substance, tracking_id in AddictionRecovery.substance_tracking_ids.items():
+            if tracking_id == goal.substance_tracking_id:
+                self.target_substance = substance
+                break
+
+        # Display the weekly intake
+        self.weekly_intake = str(goal.value)
+
+        # Display when the target was set
+        self.target_set_on = \
+            datetime.datetime.utcfromtimestamp(goal.time_set).strftime("%d/%m/%Y")
+
+        # Display for how long they've met their target
+        current_time = int(time.time())
+        uses = Repository.instance.get_uses_from_time_period(0, current_time, goal.substance_tracking_id)
+        for i, (use, amount) in enumerate(reversed(uses)):
+            if amount.amount > goal.value or i == len(uses) - 1:
+                # The user failed their goal here
+                streak_length = int((current_time - use.time) // (24 * 60 * 60))
+                if streak_length == 1:
+                    self.total_days = str(streak_length) + " day"
+                else:
+                    self.total_days = str(streak_length) + " days"
+                break
+
+    def set_default_values(self):
+        self.target_substance = "None"
+        self.weekly_intake = "None"
+        self.target_set_on = "Not set"
+        self.total_days = "N/A"
 
 
 class AddictionRecovery(App):
@@ -415,7 +471,7 @@ class AddictionRecovery(App):
 
     @staticmethod
     def create_substance_tracking():
-        for substance_name in ("Alcohol", "Coffee"):
+        for substance_name in ("Alcohol", "Coffee", "Nicotine"):
             # TODO: use actual half-life
             substance = entities.Substance(substance_name, 1)
             substance_id = Repository.instance.create_substance(substance)

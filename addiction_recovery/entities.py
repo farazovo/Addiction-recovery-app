@@ -69,11 +69,12 @@ class SubstanceAmount:
 class Goal:
     """
     Properties:
-        substance_tracking_id, goal_type_id, value, id (automatically assigned)
+        substance_tracking_id, goal_type_id, value, time_set (unix timestamp) id (automatically assigned)
     """
     substance_tracking_id: int
     goal_type_id: int
     value: int
+    time_set: int
     id: int = None
 
 

@@ -85,7 +85,6 @@ class Repository(ABC):
         """
         Gets the most commonly used substance amounts for quick access.
 
-        :param tracking_id: the id of the substance tracking that the substance amounts are for.
         :param count: the maximum number of substance amounts to be returned.
         :return: A list of SubstanceAmount objects
         """
@@ -196,6 +195,7 @@ class SqlRepository(Repository):
                     substance_tracking_id INTEGER,
                     goal_type_id INTEGER,
                     value INTEGER,
+                    time_set INTEGER,
                     FOREIGN KEY(substance_tracking_id) REFERENCES SubstanceTracking(id),
                     FOREIGN KEY(goal_type_id) REFERENCES GoalType(id)
                 );
@@ -302,8 +302,8 @@ class SqlRepository(Repository):
 
     def create_goal(self, goal: Goal) -> int:
         self.try_execute_command(
-            "INSERT INTO Goal(substance_tracking_id, goal_type_id, value) VALUES (?, ?, ?);",
-            (goal.substance_tracking_id, goal.goal_type_id, goal.value)
+            "INSERT INTO Goal(substance_tracking_id, goal_type_id, value, time_set) VALUES (?, ?, ?, ?);",
+            (goal.substance_tracking_id, goal.goal_type_id, goal.value, goal.time_set)
         )
         return self.cursor.lastrowid
 
