@@ -9,7 +9,7 @@ from kivy.uix.widget import Widget
 from kivy.properties import ObjectProperty, ListProperty, NumericProperty
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
-from kivy.garden.graph import Graph, MeshLinePlot, BarPlot
+from kivy.garden.graph import Graph, MeshLinePlot, BarPlot, HBar
 from plyer import notification
 import datetime
 import random
@@ -183,7 +183,7 @@ class GraphScreen(Screen):
         for widget in self.walk():
             if isinstance(widget, SubstanceGraph):
                 widget.update_graph()
-            elif isinstance(widget, GoalGraph):
+            elif isinstance(widget, CostGraph):
                 widget.update_graph()
             elif isinstance(widget, GraphSubstanceButtons):
                 widget.update_substances()
@@ -250,6 +250,10 @@ class SubstanceGraph(Graph):
         self.last_week_plot.points = []
         self.add_plot(self.last_week_plot)
 
+        self.goal_plot = HBar(color=[1, 0, 0, 1])
+        self.goal_plot.points = []
+        self.add_plot(self.goal_plot)
+
     def update_graph(self):
         # Determine when the last two weeks start and end
         current_time = int(time.time())
@@ -282,11 +286,14 @@ class SubstanceGraph(Graph):
         self.last_week_plot.points = \
             [((use.time - two_week_time) / x_axis_scale, amount.amount) for use, amount in two_week_uses]
 
+        # TODO: use actual goal value
+        self.goal_plot.points = [15]
 
-class GoalGraph(Graph):
+
+class CostGraph(Graph):
 
     def __init__(self, **kwargs):
-        super(GoalGraph, self).__init__(
+        super(CostGraph, self).__init__(
             xlabel='X', ylabel='Y', x_ticks_minor=5,
             x_ticks_major=25, y_ticks_major=1,
             y_grid_label=True, x_grid_label=True, padding=5,
