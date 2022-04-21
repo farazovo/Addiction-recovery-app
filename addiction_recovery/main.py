@@ -294,18 +294,53 @@ class CostGraph(Graph):
 
     def __init__(self, **kwargs):
         super(CostGraph, self).__init__(
-            xlabel='X', ylabel='Y', x_ticks_minor=5,
-            x_ticks_major=25, y_ticks_major=1,
-            y_grid_label=True, x_grid_label=True, padding=5,
-            x_grid=True, y_grid=True, xmin=-0, xmax=100, ymin=-0, ymax=12
+            xlabel='Time (days)', ylabel='Money Spent (£)',
+            x_ticks_minor=7, x_ticks_major=7,
+            y_ticks_major=5,
+            y_grid_label=True, x_grid_label=True,
+            padding=5,
+            x_grid=True, y_grid=True,
+            xmin=0, xmax=0,
+            ymin=0, ymax=0
         )
-        plot = BarPlot(color=[1, 0, 0, 1])
-        plot.points = [(x, x ** 0.5) for x in range(0, 101)]
-        plot.graph = self
-        self.add_plot(plot)
+        self.cost_plot = BarPlot(color=[1, 0, 0, 1])
+        self.cost_plot.points = []
+        self.cost_plot.bar_width = -1
+        self.add_plot(self.cost_plot)
 
     def update_graph(self):
-        pass
+
+        # Get all substance uses
+        tracking_id = AddictionRecovery.screens.get("graph").tracking_id
+        current_time = int(time.time())
+        uses = Repository.instance.get_uses_from_time_period(0, current_time, tracking_id)
+
+        if len(uses):
+            week_length = 7 * 24 * 60 * 60
+
+            # Find from what times the graph should show data from
+            oldest_use, _ = uses[0]
+            start_time = int(oldest_use.time - week_length / 7)
+
+            # Calculate the total cost for each week
+            weekly_costs = [((t + week_length / 2 - start_time) / (week_length / 7), 0)
+                            for t in range(start_time, current_time, week_length)]
+            week = 0
+            for use, amount in uses:
+                while week < len(weekly_costs):
+                    if use.time < start_time + (week + 1) * week_length:
+                        t, c = weekly_costs[week]
+                        weekly_costs[week] = (t, c + amount.cost / 100)
+                        break
+                    week += 1
+
+            # set the graph to have the right scale
+            self.xmax = len(weekly_costs) * 7
+            self.ymax = max([cost for _, cost in weekly_costs], default=10.59) * 1.25
+            self.cost_plot.points = weekly_costs
+            self.cost_plot.update_bar_width()
+        else:
+            self.cost_plot.points = []
 
 
 class AddictionRecovery(App):
