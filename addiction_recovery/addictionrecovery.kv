@@ -4,13 +4,22 @@
     weight:weight
     person_height:person_height
     birth:birth
+    goal:goal
 
     GridLayout:
         cols:1
         size: root.width, root.height
+        padding: 20
+
+        Label:
+            text: "Profile Page"
+            height: 60
+            size_hint_y: None
+            font_size: 25
 
         GridLayout:
             cols:2
+            spacing: 40
 
             Label:
                 text: "Enter your Name:"
@@ -31,18 +40,34 @@
                 multiline:False
 
             Label:
-                text: "Enter your Date of Birth in (year, month, day) format:"
+                text: "Enter your Date of Birth in\n (year, month, day) format:"
             TextInput:
                 id: birth
                 multiline:False
 
+            Label:
+                text: "Choose the substance and your\n maximum weekly intake target:"
+
+            GridLayout:
+                cols:2
+                spacing: 10
+
+                Spinner:
+                    id:substance
+                    text: "Choose Substance"
+                    values: ["Alcohol","Coffee","Nicotine"]
+
+                TextInput:
+                    id: goal
+                    multiline:False
+
+
             Button:
                 text: "Return to Menu"
-                on_press: root.return_to_menu()
+                on_press: root.manager.current = 'menu'
             Button:
                 text: "Submit"
                 on_press: root.Submit()
-
 
 <LoggingScreen>:
 
@@ -74,7 +99,7 @@
                     Spinner:
                         id:substance
                         text: "Choose Substance"
-                        values: ["Alcohol","Coffee"]
+                        values: ["Alcohol","Coffee","Nicotine"]
                         on_text: root.spinner_clicked(substance.text)
 
                     Label:
@@ -116,6 +141,55 @@
                 text: "Submit"
                 on_press: root.Submit()
 
+<GoalsScreen>:
+    GridLayout:
+        cols:1
+        size: root.width, root.height
+        padding: 20
+        spacing:30
+
+        Label:
+            text: "Goals Page"
+            height: 60
+            size_hint_y: None
+            font_size: 25
+
+        GridLayout:
+            cols:2
+            spacing:30
+
+            Label:
+                text: "Target Substance:"
+
+            Label:
+                text: ""
+
+            Label:
+                text: "Target Weekly Intake:"
+
+            Label:
+                text: ""
+
+            Label:
+                text: "Target Set On:"
+
+            Label:
+                text: ""
+
+            Label:
+                text: "Total Days Target Achieved:"
+
+            Label:
+                text: ""
+
+
+            Button:
+                text: "Return to Menu"
+                on_press: root.manager.current = 'menu'
+
+            Button:
+                text: "Update Goal"
+
 <GraphScreen>:
     GridLayout:
         cols:1
@@ -141,6 +215,9 @@
             text: "Profile"
             on_press: root.manager.current = 'profile'
 
+        Button:
+            text: "Goals"
+            on_press: root.manager.current = 'goals'
 
         Button:
             text: "Logging"

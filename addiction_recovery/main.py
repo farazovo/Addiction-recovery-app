@@ -91,6 +91,7 @@ class LoggingScreen(Screen):
         amount = self.amount.text
         cost = self.cost.text
         specific_name = self.specific_name.text
+        goal = self.goal.text
 
         print(
             f"You have logged an intake of {amount} of {substance}, specifically {specific_name}, that costed £{cost}")
@@ -343,6 +344,10 @@ class CostGraph(Graph):
             self.cost_plot.points = []
 
 
+class GoalsScreen(Screen):
+    pass
+
+
 class AddictionRecovery(App):
     screens = {}
     current_person_id = -1
@@ -364,6 +369,8 @@ class AddictionRecovery(App):
         sm.add_widget(AddictionRecovery.screens["logging"])
         AddictionRecovery.screens["graph"] = GraphScreen(name='graph')
         sm.add_widget(AddictionRecovery.screens["graph"])
+        AddictionRecovery.screens["goals"] = GoalsScreen(name='goals')
+        sm.add_widget(AddictionRecovery.screens["goals"])
 
         return sm
 
