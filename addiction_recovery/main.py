@@ -131,21 +131,39 @@ class LoggingScreen(Screen):
             f"You have logged an intake of {amount} of {substance}, specifically {specific_name}, that costed £{cost}")
 
         # Add the use to the data repository
-        tracking_id = AddictionRecovery.substance_tracking_ids.get(substance)
-        existing_preset = Repository.instance.get_substance_amount_from_data(amount, cost, specific_name, tracking_id)
-        if existing_preset:
-            # If the manually entered data is the same as a preset, use that instead
-            use = entities.SubstanceUse(tracking_id, existing_preset.id, int(time.time()))
-            Repository.instance.create_substance_use(use)
-        else:
-            # Else add the substance use by creating a new amount
-            amount = entities.SubstanceAmount(amount, cost, specific_name)
-            amount_id = Repository.instance.create_substance_amount(amount)
-            use = entities.SubstanceUse(tracking_id, amount_id, int(time.time()))
-            Repository.instance.create_substance_use(use)
+        try:
+            tracking_id = AddictionRecovery.substance_tracking_ids.get(substance)
+            if tracking_id is None:
+                raise ValueError()
+            existing_preset = Repository.instance.get_substance_amount_from_data(
+                float(amount),
+                int(cost * 100),
+                specific_name,
+                tracking_id
+            )
+            if existing_preset:
+                # If the manually entered data is the same as a preset, use that instead
+                use = entities.SubstanceUse(tracking_id, existing_preset.id, int(time.time()))
+                Repository.instance.create_substance_use(use)
+            else:
+                # Else add the substance use by creating a new amount
+                amount = entities.SubstanceAmount(float(amount), int(cost * 100), specific_name)
+                amount_id = Repository.instance.create_substance_amount(amount)
+                use = entities.SubstanceUse(tracking_id, amount_id, int(time.time()))
+                Repository.instance.create_substance_use(use)
+        except ValueError as e:
+            # TODO: show error popup
+            print(f"\033[91mInvalid substance values \033[0m")
+            return
 
         # Update the GUI to display the newly preset
         self.update_presets()
+
+        # Reset the text boxes
+        self.substance.text = "Choose Substance"
+        self.amount.text = ""
+        self.cost.text = ""
+        self.specific_name.text = ""
 
     def spinner_clicked(self, value):
         print(value)
@@ -189,7 +207,7 @@ class PresetButton(Button):
 
     def __init__(self, preset: entities.SubstanceAmount, **kwargs):
         super(PresetButton, self).__init__(
-            text=f"{preset.name}:\namount: {preset.amount}, cost: £{preset.cost / 100}",
+            text=f"{preset.name}:\namount: {preset.amount}, cost: £{'{:,.2f}'.format(preset.cost / 100)}",
             halign="center",
             valign="bottom",
             **kwargs
@@ -200,8 +218,14 @@ class PresetButton(Button):
         self.lastDateUsed = datetime.datetime.now()
         tracking_id = Repository.instance.get_tracking_id_from_amount(self.preset.id)
         if tracking_id != -1:
-            use = entities.SubstanceUse(tracking_id, self.preset.id, int(time.time()))
-            Repository.instance.create_substance_use(use)
+            # Display the details of the preset on the logging page
+            logging_screen = AddictionRecovery.screens.get("logging")
+            substance = AddictionRecovery.get_substance_name_from_tracking_id(tracking_id)
+            if substance:
+                logging_screen.substance.text = substance
+            logging_screen.amount.text = str(self.preset.amount)
+            logging_screen.cost.text = "{:,.2f}".format(self.preset.cost / 100)
+            logging_screen.specific_name.text = self.preset.name
 
 
 class GraphScreen(Screen):
