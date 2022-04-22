@@ -29,13 +29,17 @@ class MenuScreen(Screen):
 
 
 class ProfileScreen(Screen):
+    submit_button_text = StringProperty("Submit")
 
     def on_pre_enter(self, *args):
         """ When page loads run assign hint text with database values. """
         person = Repository.instance.get_person(1)
         goal = Repository.instance.get_goal(1)
         if person:
+            self.submit_button_text = "Update"
             self.AssignHintText(person, goal)
+        else:
+            self.submit_button_text = "Submit"
 
     def Submit(self):
         person_name = self.person_name.text
@@ -46,7 +50,8 @@ class ProfileScreen(Screen):
         goal = self.goal.text
 
         print(
-            f"Your name is {person_name} and you have a weight of {weight}, a height of {person_height} and your birthday is {birth}")
+            f"Your name is {person_name} and you have a weight of {weight}, a height of {person_height} and your "
+            f"birthday is {birth}")
 
         # Update the database with new values
         try:
@@ -61,30 +66,42 @@ class ProfileScreen(Screen):
             # TODO: show error popup
             print(f"\033[91mInvalid profile inputs \033[0m")
             return
-        AddictionRecovery.current_person_id = Repository.instance.create_person(person)
-        AddictionRecovery.create_substance_tracking()
 
+        if AddictionRecovery.current_person_id == -1:
+            # Create new person
+            AddictionRecovery.current_person_id = Repository.instance.create_person(person)
+            AddictionRecovery.create_substance_tracking()
+        else:
+            # Update old person
+            person.id = AddictionRecovery.current_person_id
+            Repository.instance.update_person(person)
+
+        # Create the goal
         tracking_id = AddictionRecovery.substance_tracking_ids.get(substance)
         goal_entity = None
         if tracking_id:
             goal_entity = entities.Goal(tracking_id, 1, int(goal), int(time.time()))
-            Repository.instance.create_goal(goal_entity)
+            prev_goal_entity = Repository.instance.get_goal(1)
+            if prev_goal_entity:
+                # Update old goal
+                goal_entity.id = 1
+                Repository.instance.update_goal(goal_entity)
+            else:
+                # Create new goal
+                Repository.instance.create_goal(goal_entity)
 
         self.AssignHintText(person, goal_entity)
 
     def AssignHintText(self, person: entities.Person, goal: entities.Goal):
-        # assign all the hint text
-        self.person_name.hint_text = str(person.name)
-        self.weight.hint_text = str(person.weight)
-        self.person_height.hint_text = str(person.height)
-        self.birth.hint_text = str(person.calculate_dob())
+        self.person_name.text = str(person.name)
+        self.weight.text = str(person.weight)
+        self.person_height.text = str(person.height)
+        self.birth.text = str(person.calculate_dob())
         if goal:
             substance = AddictionRecovery.get_substance_name_from_tracking_id(goal.substance_tracking_id)
-            print(goal.substance_tracking_id)
             if substance:
                 self.substance.text = substance
-            self.goal.hint_text = str(goal.value)
-
+            self.goal.text = str(goal.value)
 
     def return_to_menu(self):
         if AddictionRecovery.current_person_id == -1:
@@ -279,44 +296,6 @@ class SubstanceGraph(Graph):
         one_week_time = current_time - week_length
         two_week_time = one_week_time - week_length
 
-        # coffee = AddictionRecovery.substance_tracking_ids.get("Coffee")
-        # print(AddictionRecovery.substance_tracking_ids)
-        # small = Repository.instance.create_substance_amount(
-        #     entities.SubstanceAmount(5, 50, "small")
-        # )
-        # medium = Repository.instance.create_substance_amount(
-        #     entities.SubstanceAmount(10, 100, "medium")
-        # )
-        # large = Repository.instance.create_substance_amount(
-        #     entities.SubstanceAmount(20, 200, "large")
-        # )
-        #
-        # for i in (0.5, 0.1, 0.67, 0.98, 0.02):
-        #     Repository.instance.create_substance_use(
-        #         entities.SubstanceUse(coffee, small, int(one_week_time + i * week_length))
-        #     )
-        # for i in (0.4, 0.12, 0.82):
-        #     Repository.instance.create_substance_use(
-        #         entities.SubstanceUse(coffee, medium, int(one_week_time + i * week_length))
-        #     )
-        # for i in (0.28, 0.34, 0.77, 0.89):
-        #     Repository.instance.create_substance_use(
-        #         entities.SubstanceUse(coffee, large, int(one_week_time + i * week_length))
-        #     )
-        #
-        # for i in (0.01, 0.12, 0.24, 0.6345, 0.9345, 0.21):
-        #     Repository.instance.create_substance_use(
-        #         entities.SubstanceUse(coffee, small, int(two_week_time + i * week_length))
-        #     )
-        # for i in (0.2345, 0.11234, 0.65):
-        #     Repository.instance.create_substance_use(
-        #         entities.SubstanceUse(coffee, medium, int(two_week_time + i * week_length))
-        #     )
-        # for i in (0.586, 0.98, 0.23, 0.56):
-        #     Repository.instance.create_substance_use(
-        #         entities.SubstanceUse(coffee, large, int(two_week_time + i * week_length))
-        #     )
-
         # Find all the substance uses in those two weeks
         tracking_id = AddictionRecovery.screens.get("graph").tracking_id
         one_week_uses = Repository.instance.get_uses_from_time_period(
@@ -343,10 +322,11 @@ class SubstanceGraph(Graph):
             [((use.time - two_week_time) / x_axis_scale, amount.amount) for use, amount in two_week_uses]
 
         # Display the user's goal
-        goal = Repository.instance.get_goal(1)      # Currently, only one goal is used
+        goal = Repository.instance.get_goal(1)  # Currently, only one goal is used
         if goal:
             if goal.substance_tracking_id == tracking_id:
                 self.goal_plot.points = [goal.value]
+                self.ymax = max(self.ymax, goal.value * 1.25)
             else:
                 self.goal_plot.points = [0]
         else:
@@ -498,7 +478,7 @@ class AddictionRecovery(App):
         self.save_and_close()
         now = datetime.datetime.now()
         timedifference = (1440 * now.day + 60 * now.hour + now.minute) - (
-                    1440 * PresetButton.lastdateused.day + 60 * PresetButton.lastdateused.hour + PresetButton.lastdateused.minute)
+                1440 * PresetButton.lastdateused.day + 60 * PresetButton.lastdateused.hour + PresetButton.lastdateused.minute)
         if (timedifference > 1440):
             notify("Let us know how you're doing")
             PresetButton.lastdateused = datetime.datetime.now()

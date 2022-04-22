@@ -67,7 +67,7 @@
                 text: "Return to Menu"
                 on_press: root.manager.current = 'menu'
             Button:
-                text: "Submit"
+                text: root.submit_button_text
                 on_press: root.Submit()
 
 <LoggingScreen>:
@@ -190,6 +190,7 @@
 
             Button:
                 text: "Update Goal"
+                on_press: root.manager.current = 'profile'
 
 <GraphScreen>:
     GridLayout:

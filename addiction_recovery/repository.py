@@ -51,6 +51,17 @@ class Repository(ABC):
     def create_goal_type(self, goal_type: GoalType) -> int: pass
 
     """
+    Update data:
+        Given an entity (filled with an id), these methods will update the old record with the new data
+    """
+
+    @abstractmethod
+    def update_person(self, person: Person): pass
+
+    @abstractmethod
+    def update_goal(self, goal: Goal): pass
+
+    """
     Retrieve data:
         These methods perform queries on the data. They either return the requested data
         or None if data matching the query cannot be found.
@@ -313,6 +324,28 @@ class SqlRepository(Repository):
             (goal_type.name, goal_type.description)
         )
         return self.cursor.lastrowid
+
+    """ Update data """
+
+    def update_person(self, person: Person):
+        self.try_execute_command(
+            """
+            UPDATE Person
+            SET name = ?, weight = ?, height = ?, dob = ?
+            WHERE id = ?;
+            """,
+            (person.name, person.weight, person.height, person.dob, person.id)
+        )
+
+    def update_goal(self, goal: Goal):
+        self.try_execute_command(
+            """
+            UPDATE Goal
+            SET substance_tracking_id = ?, goal_type_id = ?, value = ?, time_set = ?
+            WHERE id = ?;
+            """,
+            (goal.substance_tracking_id, goal.goal_type_id, goal.value, goal.time_set, goal.id)
+        )
 
     """ Retrieve data """
 
