@@ -137,7 +137,7 @@ class LoggingScreen(Screen):
                 raise ValueError()
             existing_preset = Repository.instance.get_substance_amount_from_data(
                 float(amount),
-                int(cost * 100),
+                int(cost) * 100,
                 specific_name,
                 tracking_id
             )
@@ -147,7 +147,7 @@ class LoggingScreen(Screen):
                 Repository.instance.create_substance_use(use)
             else:
                 # Else add the substance use by creating a new amount
-                amount = entities.SubstanceAmount(float(amount), int(cost * 100), specific_name)
+                amount = entities.SubstanceAmount(float(amount), int(cost) * 100, specific_name)
                 amount_id = Repository.instance.create_substance_amount(amount)
                 use = entities.SubstanceUse(tracking_id, amount_id, int(time.time()))
                 Repository.instance.create_substance_use(use)
@@ -333,10 +333,7 @@ class SubstanceGraph(Graph):
             tracking_id
         )
 
-        # set the graph to have the right scale
         x_axis_scale = 24 * 60 * 60
-        self.xmax = week_length / x_axis_scale
-        self.ymax = max([amount.amount for _, amount in one_week_uses + two_week_uses], default=1.59) * 1.25
 
         # Plot this week's and last week's substance uses
         # TODO: calculate amounts properly
@@ -344,6 +341,11 @@ class SubstanceGraph(Graph):
             [((use.time - one_week_time) / x_axis_scale, amount.amount) for use, amount in one_week_uses]
         self.last_week_plot.points = \
             [((use.time - two_week_time) / x_axis_scale, amount.amount) for use, amount in two_week_uses]
+
+        # set the graph to have the right scale
+        self.xmax = week_length / x_axis_scale
+        self.ymax = max([amount for _, amount in self.current_week_plot.points + self.last_week_plot.points],
+                        default=1.59) * 1.25
 
         # Display the user's goal
         goal = Repository.instance.get_goal(1)  # Currently, only one goal is used
