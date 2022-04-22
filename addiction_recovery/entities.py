@@ -18,6 +18,9 @@ class Person:
         dob_datetime = datetime.datetime.fromtimestamp(self.dob)
         return int((datetime.datetime.today() - dob_datetime).days / 365.2425)
 
+    def calculate_dob(self) -> str:
+        return datetime.datetime.utcfromtimestamp(self.dob + 12 * 60 * 60).strftime("%Y/%m/%d")
+
 
 @dataclass
 class SubstanceTracking:

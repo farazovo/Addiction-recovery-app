@@ -33,8 +33,9 @@ class ProfileScreen(Screen):
     def on_pre_enter(self, *args):
         """ When page loads run assign hint text with database values. """
         person = Repository.instance.get_person(1)
+        goal = Repository.instance.get_goal(1)
         if person:
-            self.AssignHintText(person)
+            self.AssignHintText(person, goal)
 
     def Submit(self):
         person_name = self.person_name.text
@@ -64,18 +65,26 @@ class ProfileScreen(Screen):
         AddictionRecovery.create_substance_tracking()
 
         tracking_id = AddictionRecovery.substance_tracking_ids.get(substance)
+        goal_entity = None
         if tracking_id:
             goal_entity = entities.Goal(tracking_id, 1, int(goal), int(time.time()))
             Repository.instance.create_goal(goal_entity)
 
-        self.AssignHintText(person)
+        self.AssignHintText(person, goal_entity)
 
-    def AssignHintText(self, person: entities.Person):
+    def AssignHintText(self, person: entities.Person, goal: entities.Goal):
         # assign all the hint text
         self.person_name.hint_text = str(person.name)
         self.weight.hint_text = str(person.weight)
         self.person_height.hint_text = str(person.height)
-        self.birth.hint_text = str(person.calculate_age())
+        self.birth.hint_text = str(person.calculate_dob())
+        if goal:
+            substance = AddictionRecovery.get_substance_name_from_tracking_id(goal.substance_tracking_id)
+            print(goal.substance_tracking_id)
+            if substance:
+                self.substance.text = substance
+            self.goal.hint_text = str(goal.value)
+
 
     def return_to_menu(self):
         if AddictionRecovery.current_person_id == -1:
@@ -270,6 +279,44 @@ class SubstanceGraph(Graph):
         one_week_time = current_time - week_length
         two_week_time = one_week_time - week_length
 
+        # coffee = AddictionRecovery.substance_tracking_ids.get("Coffee")
+        # print(AddictionRecovery.substance_tracking_ids)
+        # small = Repository.instance.create_substance_amount(
+        #     entities.SubstanceAmount(5, 50, "small")
+        # )
+        # medium = Repository.instance.create_substance_amount(
+        #     entities.SubstanceAmount(10, 100, "medium")
+        # )
+        # large = Repository.instance.create_substance_amount(
+        #     entities.SubstanceAmount(20, 200, "large")
+        # )
+        #
+        # for i in (0.5, 0.1, 0.67, 0.98, 0.02):
+        #     Repository.instance.create_substance_use(
+        #         entities.SubstanceUse(coffee, small, int(one_week_time + i * week_length))
+        #     )
+        # for i in (0.4, 0.12, 0.82):
+        #     Repository.instance.create_substance_use(
+        #         entities.SubstanceUse(coffee, medium, int(one_week_time + i * week_length))
+        #     )
+        # for i in (0.28, 0.34, 0.77, 0.89):
+        #     Repository.instance.create_substance_use(
+        #         entities.SubstanceUse(coffee, large, int(one_week_time + i * week_length))
+        #     )
+        #
+        # for i in (0.01, 0.12, 0.24, 0.6345, 0.9345, 0.21):
+        #     Repository.instance.create_substance_use(
+        #         entities.SubstanceUse(coffee, small, int(two_week_time + i * week_length))
+        #     )
+        # for i in (0.2345, 0.11234, 0.65):
+        #     Repository.instance.create_substance_use(
+        #         entities.SubstanceUse(coffee, medium, int(two_week_time + i * week_length))
+        #     )
+        # for i in (0.586, 0.98, 0.23, 0.56):
+        #     Repository.instance.create_substance_use(
+        #         entities.SubstanceUse(coffee, large, int(two_week_time + i * week_length))
+        #     )
+
         # Find all the substance uses in those two weeks
         tracking_id = AddictionRecovery.screens.get("graph").tracking_id
         one_week_uses = Repository.instance.get_uses_from_time_period(
@@ -352,7 +399,7 @@ class CostGraph(Graph):
 
             # set the graph to have the right scale
             self.xmax = len(weekly_costs) * 7
-            self.ymax = max([cost for _, cost in weekly_costs], default=10.59) * 1.25
+            self.ymax = max([cost for _, cost in weekly_costs], default=15.9) * 1.25
             self.cost_plot.points = weekly_costs
             self.cost_plot.update_bar_width()
         else:
@@ -372,10 +419,9 @@ class GoalsScreen(Screen):
             return
 
         # Display the target substance
-        for substance, tracking_id in AddictionRecovery.substance_tracking_ids.items():
-            if tracking_id == goal.substance_tracking_id:
-                self.target_substance = substance
-                break
+        substance = AddictionRecovery.get_substance_name_from_tracking_id(goal.substance_tracking_id)
+        if substance:
+            self.target_substance = substance
 
         # Display the weekly intake
         self.weekly_intake = str(goal.value)
@@ -478,6 +524,12 @@ class AddictionRecovery(App):
             substance_tracking = entities.SubstanceTracking(AddictionRecovery.current_person_id, substance_id)
             AddictionRecovery.substance_tracking_ids[substance_name] = \
                 Repository.instance.create_substance_tracking(substance_tracking)
+
+    @staticmethod
+    def get_substance_name_from_tracking_id(tracking_id: int) -> str:
+        for substance, substance_tracking_id in AddictionRecovery.substance_tracking_ids.items():
+            if substance_tracking_id == tracking_id:
+                return substance
 
 
 def notify(message):
