@@ -155,7 +155,7 @@ class SqlRepository(Repository):
     def __exit__(self, typ, value, traceback):
         self.close()
 
-    def start(self, filepath=None) -> bool:
+    def start(self) -> bool:
         """
         Initialises the connection to the database and creates tables if needed.
 
@@ -163,12 +163,9 @@ class SqlRepository(Repository):
         :return: a bool of whether the database was created successfully.
         """
 
-        if filepath is None:
-            filepath = self.filepath
-
         try:
             # Setup database connection
-            self.connection = sqlite3.connect(filepath)
+            self.connection = sqlite3.connect(self.filepath)
             self.cursor = self.connection.cursor()
 
             # Create the tables for the first start-up
