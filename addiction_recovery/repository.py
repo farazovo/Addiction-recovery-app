@@ -17,6 +17,12 @@ class Repository(ABC):
         Repository.instance = self
 
     @abstractmethod
+    def __enter__(self): pass
+
+    @abstractmethod
+    def __exit__(self, typ, value, traceback): pass
+
+    @abstractmethod
     def start(self) -> bool: pass
 
     @abstractmethod
@@ -136,18 +142,30 @@ class SqlRepository(Repository):
     database.
     """
 
-    def __init__(self):
+    def __init__(self, filepath="database.db"):
         super().__init__()
         self.connection = None
         self.cursor = None
+        self.filepath = filepath
 
-    def start(self, filepath="database.db") -> bool:
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, typ, value, traceback):
+        self.close()
+
+    def start(self, filepath=None) -> bool:
         """
         Initialises the connection to the database and creates tables if needed.
 
         :param filepath: the filepath to the database. The default is database.db.
         :return: a bool of whether the database was created successfully.
         """
+
+        if filepath is None:
+            filepath = self.filepath
+
         try:
             # Setup database connection
             self.connection = sqlite3.connect(filepath)

@@ -1,4 +1,5 @@
 import time
+
 from kivy.app import App
 from kivy.uix.image import Image
 from kivy.uix.label import Label
@@ -11,6 +12,7 @@ from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.garden.graph import Graph, MeshLinePlot, BarPlot, HBar
 from plyer import notification
+
 import datetime
 import random
 
@@ -137,7 +139,7 @@ class LoggingScreen(Screen):
                 raise ValueError()
             existing_preset = Repository.instance.get_substance_amount_from_data(
                 float(amount),
-                int(cost) * 100,
+                int(float(cost) * 100),
                 specific_name,
                 tracking_id
             )
@@ -147,7 +149,7 @@ class LoggingScreen(Screen):
                 Repository.instance.create_substance_use(use)
             else:
                 # Else add the substance use by creating a new amount
-                amount = entities.SubstanceAmount(float(amount), int(cost) * 100, specific_name)
+                amount = entities.SubstanceAmount(float(amount), int(float(cost) * 100), specific_name)
                 amount_id = Repository.instance.create_substance_amount(amount)
                 use = entities.SubstanceUse(tracking_id, amount_id, int(time.time()))
                 Repository.instance.create_substance_use(use)
@@ -230,11 +232,11 @@ class PresetButton(Button):
 
 class GraphScreen(Screen):
 
-    def __init__(self, **kw):
-        super(GraphScreen, self).__init__(**kw)
+    def __init__(self, **kwargs):
+        super(GraphScreen, self).__init__(**kwargs)
         self.tracking_id = -1
 
-    def on_pre_enter(self, *args):
+    def on_pre_enter(self):
         self.tracking_id = list(AddictionRecovery.substance_tracking_ids.values())[0]
         self.update_graphs()
 
@@ -373,7 +375,7 @@ class CostGraph(Graph):
             ymin=0, ymax=1
         )
         self.cost_plot = BarPlot(color=[1, 0, 0, 1])
-        self.cost_plot.points = [(0, 0)]
+        self.cost_plot.points = []
         self.cost_plot.bar_width = -1
         self.add_plot(self.cost_plot)
 
@@ -389,7 +391,7 @@ class CostGraph(Graph):
 
             # Find from what times the graph should show data from
             oldest_use, _ = uses[0]
-            start_time = int(oldest_use.time - week_length / 7)
+            start_time = int(oldest_use.time)
 
             # Calculate the total cost for each week
             weekly_costs = [((t + week_length / 2 - start_time) / (week_length / 7), 0)
