@@ -38,7 +38,6 @@ class ProfileScreen(Screen):
         person = Repository.instance.get_person(1)
         goal = Repository.instance.get_goal(1)
         if person:
-            self.submit_button_text = "Update"
             self.AssignHintText(person, goal)
         else:
             self.submit_button_text = "Submit"
@@ -51,9 +50,9 @@ class ProfileScreen(Screen):
         substance = self.substance.text
         goal = self.goal.text
 
-        print(
-            f"Your name is {person_name} and you have a weight of {weight}, a height of {person_height} and your "
-            f"birthday is {birth}")
+        # print(
+        #     f"Your name is {person_name} and you have a weight of {weight}, a height of {person_height} and your "
+        #     f"birthday is {birth}")
 
         # Update the database with new values
         try:
@@ -99,6 +98,7 @@ class ProfileScreen(Screen):
         self.weight.text = str(person.weight)
         self.person_height.text = str(person.height)
         self.birth.text = str(person.calculate_dob())
+        self.submit_button_text = "Update"
         if goal:
             substance = AddictionRecovery.get_substance_name_from_tracking_id(goal.substance_tracking_id)
             if substance:
@@ -129,8 +129,8 @@ class LoggingScreen(Screen):
         cost = self.cost.text
         specific_name = self.specific_name.text
 
-        print(
-            f"You have logged an intake of {amount} of {substance}, specifically {specific_name}, that costed £{cost}")
+        # print(
+        #    f"You have logged an intake of {amount} of {substance}, specifically {specific_name}, that costed £{cost}")
 
         # Add the use to the data repository
         try:
@@ -463,11 +463,19 @@ class AddictionRecovery(App):
     current_person_id = -1
     substance_tracking_ids = {}
 
+    def __init__(self, database_filepath="database.db", **kwargs):
+        super(AddictionRecovery, self).__init__(**kwargs)
+        SqlRepository(database_filepath)
+        AddictionRecovery.screens = {}
+        AddictionRecovery.current_person_id = -1
+        AddictionRecovery.substance_tracking_ids = {}
+
     def build(self):
         self.notifsent = False
         # Setup data repository
-        if not SqlRepository().start():
-            Repository.instance = None
+        if Repository.instance:
+            if not Repository.instance.start():
+                Repository.instance = None
 
         # Create the screen manager
         sm = ScreenManager()

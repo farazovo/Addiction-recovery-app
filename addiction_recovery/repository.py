@@ -30,6 +30,9 @@ class Repository(ABC):
         if Repository.instance == self:
             Repository.instance = None
 
+    @abstractmethod
+    def reset(self): pass
+
     """
     Create entities:
         These methods create an entity and return their id
@@ -158,8 +161,6 @@ class SqlRepository(Repository):
     def start(self) -> bool:
         """
         Initialises the connection to the database and creates tables if needed.
-
-        :param filepath: the filepath to the database. The default is database.db.
         :return: a bool of whether the database was created successfully.
         """
 
@@ -245,6 +246,20 @@ class SqlRepository(Repository):
             self.connection.close()
             self.connection = None
             self.cursor = None
+
+    def reset(self):
+        if self.cursor:
+            self.cursor.execute("DROP TABLE IF EXISTS Person;")
+            self.cursor.execute("DROP TABLE IF EXISTS SubstanceTracking;")
+            self.cursor.execute("DROP TABLE IF EXISTS Substance;")
+            self.cursor.execute("DROP TABLE IF EXISTS SubstanceUse;")
+            self.cursor.execute("DROP TABLE IF EXISTS SubstanceAmount;")
+            self.cursor.execute("DROP TABLE IF EXISTS Goal;")
+            self.cursor.execute("DROP TABLE IF EXISTS GoalType;")
+            self.connection.close()
+            self.connection = None
+            self.cursor = None
+        self.start()
 
     def try_execute_command(self, command: str, parameters: Iterable = ...) -> bool:
         """

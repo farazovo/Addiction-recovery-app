@@ -1,7 +1,13 @@
 import unittest
+import io
+import sys
+
+from kivy.clock import Clock
+from kivy.tests.common import GraphicUnitTest
 
 from repository import *
 from entities import *
+from main import *
 
 
 class TestSqlRepository(unittest.TestCase):
@@ -204,7 +210,6 @@ class TestSqlRepository(unittest.TestCase):
     def test_get_uses_from_time_period(self):
         """ Tests retrieving substance uses from a given time period. """
         with SqlRepository(":memory:") as r:
-
             amount = SubstanceAmount(1.0, 1, "name")
             amount.id = r.create_substance_amount(amount)
 
@@ -222,6 +227,180 @@ class TestSqlRepository(unittest.TestCase):
             self.assertEqual(uses_and_amounts[11:-10], r.get_uses_from_time_period(10, 40, tracking_id))
             self.assertEqual([uses_and_amounts[-1]], r.get_uses_from_time_period(48, 50, tracking_id))
             self.assertEqual([], r.get_uses_from_time_period(49, 100, tracking_id))
+
+
+class TestProfileScreen(GraphicUnitTest):
+
+    def test_submit(self):
+        app = AddictionRecovery(database_filepath=":memory:")
+        Repository.instance.reset()
+
+        def test(*args):
+            profile = app.screens.get("profile")
+            self.assertEqual(profile.submit_button_text, "Submit")
+
+            # Load fake information
+            profile.person_name.text = "name"
+            profile.weight.text = "123"
+            profile.person_height.text = "123"
+            profile.birth.text = "2000/01/01"
+            profile.substance.text = "Coffee"
+            profile.goal.text = "10"
+
+            # Check that there are no errors
+            output = io.StringIO()
+            sys.stdout = output
+            profile.Submit()
+            sys.stdout = sys.__stdout__
+            self.assertEqual("", output.getvalue())
+            self.assertEqual(profile.submit_button_text, "Update")
+
+            self.assertIsNotNone(Repository.instance.get_person(AddictionRecovery.current_person_id))
+
+            app.stop()
+
+        Clock.schedule_once(test, 0)
+        app.run()
+
+    def test_stays_on_profile(self):
+        app = AddictionRecovery(database_filepath=":memory:")
+        Repository.instance.reset()
+
+        def test(*args):
+            profile = app.screens.get("profile")
+            self.assertEqual(app.root.current, "profile")
+            profile.return_to_menu()
+            self.assertEqual(app.root.current, "profile")
+
+            # Load fake information
+            profile.person_name.text = "name"
+            profile.weight.text = "123"
+            profile.person_height.text = "123"
+            profile.birth.text = "2000/01/01"
+            profile.substance.text = "Coffee"
+            profile.goal.text = "10"
+            
+            profile.Submit()
+
+            profile.return_to_menu()
+            self.assertEqual(app.root.current, "menu")
+
+            app.stop()
+
+        Clock.schedule_once(test, 0)
+        app.run()
+
+    def test_invalid_weight(self):
+        app = AddictionRecovery(database_filepath=":memory:")
+        Repository.instance.reset()
+
+        def test(*args):
+            profile = app.screens.get("profile")
+            self.assertEqual(profile.submit_button_text, "Submit")
+
+            # Load fake information
+            profile.person_name.text = "name"
+            profile.weight.text = "text"
+            profile.person_height.text = "123"
+            profile.birth.text = "2000/01/01"
+            profile.substance.text = "Coffee"
+            profile.goal.text = "10"
+
+            # Check that there are errors
+            output = io.StringIO()
+            sys.stdout = output
+            profile.Submit()
+            sys.stdout = sys.__stdout__
+            self.assertEqual(f"\033[91mInvalid profile inputs \033[0m\n", output.getvalue())
+
+            app.stop()
+
+        Clock.schedule_once(test, 0)
+        app.run()
+
+    def test_invalid_height(self):
+        app = AddictionRecovery(database_filepath=":memory:")
+        Repository.instance.reset()
+
+        def test(*args):
+            profile = app.screens.get("profile")
+            self.assertEqual(profile.submit_button_text, "Submit")
+
+            # Load fake information
+            profile.person_name.text = "name"
+            profile.weight.text = "123"
+            profile.person_height.text = "text"
+            profile.birth.text = "2000/01/01"
+            profile.substance.text = "Coffee"
+            profile.goal.text = "10"
+
+            # Check that there are errors
+            output = io.StringIO()
+            sys.stdout = output
+            profile.Submit()
+            sys.stdout = sys.__stdout__
+            self.assertEqual(f"\033[91mInvalid profile inputs \033[0m\n", output.getvalue())
+
+            app.stop()
+
+        Clock.schedule_once(test, 0)
+        app.run()
+
+    def test_invalid_birth(self):
+        app = AddictionRecovery(database_filepath=":memory:")
+        Repository.instance.reset()
+
+        def test(*args):
+            profile = app.screens.get("profile")
+            self.assertEqual(profile.submit_button_text, "Submit")
+
+            # Load fake information
+            profile.person_name.text = "name"
+            profile.weight.text = "123"
+            profile.person_height.text = "123"
+            profile.birth.text = "00/01/01"  # Must be exactly yyyy/mm/dd
+            profile.substance.text = "Coffee"
+            profile.goal.text = "10"
+
+            # Check that there are errors
+            output = io.StringIO()
+            sys.stdout = output
+            profile.Submit()
+            sys.stdout = sys.__stdout__
+            self.assertEqual(f"\033[91mInvalid profile inputs \033[0m\n", output.getvalue())
+
+            app.stop()
+
+        Clock.schedule_once(test, 0)
+        app.run()
+
+    def test_invalid_goal(self):
+        app = AddictionRecovery(database_filepath=":memory:")
+        Repository.instance.reset()
+
+        def test(*args):
+            profile = app.screens.get("profile")
+            self.assertEqual(profile.submit_button_text, "Submit")
+
+            # Load fake information
+            profile.person_name.text = "name"
+            profile.weight.text = "123"
+            profile.person_height.text = "123"
+            profile.birth.text = "2000/01/01"
+            profile.substance.text = "Coffee"
+            profile.goal.text = "text"
+
+            # Check that there are errors
+            output = io.StringIO()
+            sys.stdout = output
+            profile.Submit()
+            sys.stdout = sys.__stdout__
+            self.assertEqual(f"\033[91mInvalid profile inputs \033[0m\n", output.getvalue())
+
+            app.stop()
+
+        Clock.schedule_once(test, 0)
+        app.run()
 
 
 if __name__ == "__main__":
