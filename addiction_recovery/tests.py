@@ -279,7 +279,7 @@ class TestProfileScreen(GraphicUnitTest):
             profile.birth.text = "2000/01/01"
             profile.substance.text = "Coffee"
             profile.goal.text = "10"
-            
+
             profile.Submit()
 
             profile.return_to_menu()
@@ -312,6 +312,14 @@ class TestProfileScreen(GraphicUnitTest):
             profile.Submit()
             sys.stdout = sys.__stdout__
             self.assertEqual(f"\033[91mInvalid profile inputs \033[0m\n", output.getvalue())
+            self.assertEqual(-1, AddictionRecovery.current_person_id)
+
+            self.assertTrue(profile.person_name.text == "name")
+            self.assertTrue(profile.weight.text == "text")
+            self.assertTrue(profile.person_height.text == "123")
+            self.assertTrue(profile.birth.text == "2000/01/01")
+            self.assertTrue(profile.substance.text == "Coffee")
+            self.assertTrue(profile.goal.text == "10")
 
             app.stop()
 
@@ -396,6 +404,216 @@ class TestProfileScreen(GraphicUnitTest):
             profile.Submit()
             sys.stdout = sys.__stdout__
             self.assertEqual(f"\033[91mInvalid profile inputs \033[0m\n", output.getvalue())
+
+            app.stop()
+
+        Clock.schedule_once(test, 0)
+        app.run()
+
+
+class TestLoggingScreen(GraphicUnitTest):
+
+    def create_profile(self, app):
+        profile = app.screens.get("profile")
+        profile.person_name.text = "name"
+        profile.weight.text = "123"
+        profile.person_height.text = "123"
+        profile.birth.text = "2000/01/01"
+        profile.substance.text = "Coffee"
+        profile.goal.text = "10"
+        profile.Submit()
+
+    def test_submit(self):
+        app = AddictionRecovery(database_filepath=":memory:")
+        Repository.instance.reset()
+
+        def test(*args):
+            self.create_profile(app)
+            logging = app.screens.get("logging")
+
+            self.assertEqual(len(Repository.instance.get_uses_from_time_period(
+                0, int(time.time()) + 10, AddictionRecovery.substance_tracking_ids.get("Coffee"))), 0)
+            self.assertEqual(len(Repository.instance.get_common_substance_amounts(10)), 0)
+
+            # Load fake information
+            logging.substance.text = "Coffee"
+            logging.amount.text = "10"
+            logging.cost.text = "2.50"
+            logging.specific_name.text = "small"
+
+            # Check that there are no errors
+            output = io.StringIO()
+            sys.stdout = output
+            logging.Submit()
+            sys.stdout = sys.__stdout__
+            self.assertEqual("", output.getvalue())
+
+            self.assertEqual(len(Repository.instance.get_uses_from_time_period(
+                0, int(time.time()) + 10, AddictionRecovery.substance_tracking_ids.get("Coffee"))), 1)
+            self.assertEqual(len(Repository.instance.get_common_substance_amounts(10)), 1)
+
+            self.assertEqual("Choose Substance", logging.substance.text)
+            self.assertEqual("", logging.amount.text)
+            self.assertEqual("", logging.cost.text)
+            self.assertEqual("", logging.specific_name.text)
+
+            app.stop()
+
+        Clock.schedule_once(test, 0)
+        app.run()
+
+    def test_presets(self):
+        app = AddictionRecovery(database_filepath=":memory:")
+        Repository.instance.reset()
+
+        def test(*args):
+            self.create_profile(app)
+            logging = app.screens.get("logging")
+
+            for widget in logging.walk():
+                if isinstance(widget, SubstancePresets):
+                    self.assertEqual(len(list(filter(lambda c: isinstance(c, PresetButton), widget.walk()))), 0)
+
+            # Load fake information
+            logging.substance.text = "Coffee"
+            logging.amount.text = "10"
+            logging.cost.text = "2.50"
+            logging.specific_name.text = "small"
+            logging.Submit()
+
+            for widget in logging.walk():
+                if isinstance(widget, SubstancePresets):
+                    self.assertEqual(len(Repository.instance.get_common_substance_amounts(10)), 1)
+
+            app.stop()
+
+        Clock.schedule_once(test, 0)
+        app.run()
+
+    def test_preset_submit(self):
+        app = AddictionRecovery(database_filepath=":memory:")
+        Repository.instance.reset()
+
+        def test(*args):
+            self.create_profile(app)
+            logging = app.screens.get("logging")
+
+            # Load fake information
+            logging.substance.text = "Coffee"
+            logging.amount.text = "10"
+            logging.cost.text = "2.50"
+            logging.specific_name.text = "small"
+            logging.Submit()
+
+            self.assertEqual(len(Repository.instance.get_uses_from_time_period(
+                0, int(time.time()) + 10, AddictionRecovery.substance_tracking_ids.get("Coffee"))), 1)
+
+            # Press preset button
+            for widget in logging.walk():
+                if isinstance(widget, SubstancePresets):
+                    for child in widget.walk():
+                        if isinstance(child, PresetButton):
+                            child.on_press()
+                            break
+
+            self.assertEqual("Coffee", logging.substance.text)
+            self.assertEqual("10.0", logging.amount.text)
+            self.assertEqual("2.50", logging.cost.text)
+            self.assertEqual("small", logging.specific_name.text)
+            logging.Submit()
+
+            self.assertEqual(len(Repository.instance.get_uses_from_time_period(
+                0, int(time.time()) + 10, AddictionRecovery.substance_tracking_ids.get("Coffee"))), 2)
+            self.assertEqual(len(Repository.instance.get_common_substance_amounts(10)), 1)
+
+            self.assertEqual("Choose Substance", logging.substance.text)
+            self.assertEqual("", logging.amount.text)
+            self.assertEqual("", logging.cost.text)
+            self.assertEqual("", logging.specific_name.text)
+
+            app.stop()
+
+        Clock.schedule_once(test, 0)
+        app.run()
+
+    def test_invalid_substance(self):
+        app = AddictionRecovery(database_filepath=":memory:")
+        Repository.instance.reset()
+
+        def test(*args):
+            self.create_profile(app)
+            logging = app.screens.get("logging")
+
+            # Load fake information
+            logging.substance.text = "Cauliflower"
+            logging.amount.text = "10"
+            logging.cost.text = "2.50"
+            logging.specific_name.text = "small"
+
+            # Check that there are errors
+            output = io.StringIO()
+            sys.stdout = output
+            logging.Submit()
+            sys.stdout = sys.__stdout__
+            self.assertEqual(f"\033[91mInvalid substance values \033[0m\n", output.getvalue())
+            self.assertEqual(len(Repository.instance.get_common_substance_amounts(10)), 0)
+
+            self.assertEqual("Cauliflower", logging.substance.text)
+            self.assertEqual("10", logging.amount.text)
+            self.assertEqual("2.50", logging.cost.text)
+            self.assertEqual("small", logging.specific_name.text)
+
+            app.stop()
+
+        Clock.schedule_once(test, 0)
+        app.run()
+
+    def test_invalid_amount(self):
+        app = AddictionRecovery(database_filepath=":memory:")
+        Repository.instance.reset()
+
+        def test(*args):
+            self.create_profile(app)
+            logging = app.screens.get("logging")
+
+            # Load fake information
+            logging.substance.text = "Coffee"
+            logging.amount.text = "text"
+            logging.cost.text = "2.50"
+            logging.specific_name.text = "small"
+
+            # Check that there are errors
+            output = io.StringIO()
+            sys.stdout = output
+            logging.Submit()
+            sys.stdout = sys.__stdout__
+            self.assertEqual(f"\033[91mInvalid substance values \033[0m\n", output.getvalue())
+
+            app.stop()
+
+        Clock.schedule_once(test, 0)
+        app.run()
+
+    def test_invalid_cost(self):
+        app = AddictionRecovery(database_filepath=":memory:")
+        Repository.instance.reset()
+
+        def test(*args):
+            self.create_profile(app)
+            logging = app.screens.get("logging")
+
+            # Load fake information
+            logging.substance.text = "Coffee"
+            logging.amount.text = "10"
+            logging.cost.text = "text"
+            logging.specific_name.text = "small"
+
+            # Check that there are errors
+            output = io.StringIO()
+            sys.stdout = output
+            logging.Submit()
+            sys.stdout = sys.__stdout__
+            self.assertEqual(f"\033[91mInvalid substance values \033[0m\n", output.getvalue())
 
             app.stop()
 

@@ -168,8 +168,8 @@ class LoggingScreen(Screen):
         self.specific_name.text = ""
 
     def spinner_clicked(self, value):
-        print(value)
-
+        # print(value)
+        pass
 
 class SubstancePresets(GridLayout):
     """ A row of buttons that allow users to select previously used substance amount presets. """
