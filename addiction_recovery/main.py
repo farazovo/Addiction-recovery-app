@@ -21,13 +21,14 @@ from repository import SqlRepository, Repository
 
 
 class MenuScreen(Screen):
+    image_source = StringProperty("")
+
     def on_pre_enter(self):
         # Get a random image of a random substance
         substances = list(AddictionRecovery.substance_tracking_ids.keys())
         if len(substances):
             substance_name = substances[random.randrange(0, len(substances))]
-            filename = f"motivation/{substance_name}/{str(random.randrange(1, 5))}.png"
-            wimg = Image(source=filename)
+            self.image_source = f"motivation/{substance_name}/{str(random.randrange(1, 5))}.jpg"
 
 
 class ProfileScreen(Screen):
@@ -170,6 +171,7 @@ class LoggingScreen(Screen):
     def spinner_clicked(self, value):
         # print(value)
         pass
+
 
 class SubstancePresets(GridLayout):
     """ A row of buttons that allow users to select previously used substance amount presets. """

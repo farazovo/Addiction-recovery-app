@@ -207,29 +207,34 @@
 
 <MenuScreen>:
     GridLayout:
-        cols:1
+        rows:1
 
-        Label:
-            text: "Welcome to our Addiction Recovery App"
+        Image:
+            source: root.image_source
+
+        GridLayout:
+            cols:1
+
+            Label:
+                text: "Welcome to our Addiction Recovery App"
+
+            Button:
+                text: "Profile"
+                on_press: root.manager.current = 'profile'
+
+            Button:
+                text: "Goals"
+                on_press: root.manager.current = 'goals'
+
+            Button:
+                text: "Logging"
+                on_press: root.manager.current = 'logging'
 
 
-        Button:
-            text: "Profile"
-            on_press: root.manager.current = 'profile'
+            Button:
+                text: "Graphs"
+                on_press: root.manager.current = 'graph'
 
-        Button:
-            text: "Goals"
-            on_press: root.manager.current = 'goals'
-
-        Button:
-            text: "Logging"
-            on_press: root.manager.current = 'logging'
-
-
-        Button:
-            text: "Graphs"
-            on_press: root.manager.current = 'graph'
-
-        Button:
-            text: "Exit App"
-            on_press: app.stop()
+            Button:
+                text: "Exit App"
+                on_press: app.stop()
