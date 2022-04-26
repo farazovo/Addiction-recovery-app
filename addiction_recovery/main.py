@@ -24,6 +24,9 @@ class MenuScreen(Screen):
     image_source = StringProperty("")
 
     def on_pre_enter(self):
+        self.update_image()
+
+    def update_image(self):
         # Get a random image of a random substance
         substances = list(AddictionRecovery.substance_tracking_ids.keys())
         if len(substances):
@@ -507,6 +510,8 @@ class AddictionRecovery(App):
             substances = Repository.instance.get_substances_and_tracking(person.id)
             for substance, tracking in substances:
                 AddictionRecovery.substance_tracking_ids[substance.name] = tracking.id
+
+        AddictionRecovery.screens["menu"].update_image()
 
     def on_stop(self):
         self.save_and_close()
