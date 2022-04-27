@@ -237,9 +237,6 @@
         GridLayout:
             cols: 2
 
-            Image:
-                source: root.image_source
-
             GridLayout:
                 cols: 1
                 spacing: 5
@@ -264,3 +261,21 @@
                 Button:
                     text: "Exit App"
                     on_press: app.stop()
+
+            GridLayout:
+                cols:1
+
+                GridLayout:
+                    cols:1
+                    size_hint_y: 0.3
+
+                    Label:
+                        text: "Summary Statistics:"
+
+                    Label:
+                        text: root.goal_text
+                    Label:
+                        text: root.cost_text
+
+                Image:
+                    source: root.image_source

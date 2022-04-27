@@ -22,16 +22,32 @@ from repository import SqlRepository, Repository
 
 class MenuScreen(Screen):
     image_source = StringProperty("")
+    goal_text = StringProperty("")
+    cost_text = StringProperty("")
 
     def on_pre_enter(self):
-        self.update_image()
+        self.update_page()
 
-    def update_image(self):
+    def update_page(self):
         # Get a random image of a random substance
         substances = list(AddictionRecovery.substance_tracking_ids.keys())
         if len(substances):
             substance_name = substances[random.randrange(0, len(substances))]
             self.image_source = f"motivation/{substance_name}/{str(random.randrange(1, 5))}.jpg"
+
+        # Show statistics
+        goal = Repository.instance.get_goal(1)
+        if goal:
+            self.goal_text = f"You've met your goal of {goal.value} for {calculate_goal_streak(goal)}"
+        else:
+            self.goal_text = ""
+        self.cost_text = ""
+        last_week_cost = 0
+        for tracking_id in AddictionRecovery.substance_tracking_ids.values():
+            weekly_costs = calculate_weekly_costs(tracking_id)
+            if len(weekly_costs):
+                last_week_cost += weekly_costs[-1][1]
+        self.cost_text = f"Last week, you spent £{'{:,.2f}'.format(last_week_cost)} on substances"
 
 
 class ProfileScreen(Screen):
@@ -290,6 +306,7 @@ class SubstanceGraphButton(Button):
         self.tracking_id = tracking.id
 
     def on_press(self):
+        # notify("heelo")
         AddictionRecovery.screens.get("graph").tracking_id = self.tracking_id
         AddictionRecovery.screens.get("graph").update_graphs()
 
@@ -366,6 +383,33 @@ class SubstanceGraph(Graph):
             self.goal_plot.points = [0]
 
 
+def calculate_weekly_costs(tracking_id):
+    # Get all substance uses
+    current_time = int(time.time())
+    uses = Repository.instance.get_uses_from_time_period(0, current_time, tracking_id)
+
+    if len(uses):
+        week_length = 7 * 24 * 60 * 60
+
+        # Find from what times the graph should show data from
+        oldest_use, _ = uses[0]
+        start_time = int(oldest_use.time)
+
+        # Calculate the total cost for each week
+        weekly_costs = [((t + week_length / 2 - start_time) / (week_length / 7), 0)
+                        for t in range(start_time, current_time, week_length)]
+        week = 0
+        for use, amount in uses:
+            while week < len(weekly_costs):
+                if use.time < start_time + (week + 1) * week_length:
+                    t, c = weekly_costs[week]
+                    weekly_costs[week] = (t, c + amount.cost / 100)
+                    break
+                week += 1
+        return weekly_costs
+    return []
+
+
 class CostGraph(Graph):
 
     def __init__(self, **kwargs):
@@ -385,31 +429,9 @@ class CostGraph(Graph):
         self.add_plot(self.cost_plot)
 
     def update_graph(self):
-
-        # Get all substance uses
         tracking_id = AddictionRecovery.screens.get("graph").tracking_id
-        current_time = int(time.time())
-        uses = Repository.instance.get_uses_from_time_period(0, current_time, tracking_id)
-
-        if len(uses):
-            week_length = 7 * 24 * 60 * 60
-
-            # Find from what times the graph should show data from
-            oldest_use, _ = uses[0]
-            start_time = int(oldest_use.time)
-
-            # Calculate the total cost for each week
-            weekly_costs = [((t + week_length / 2 - start_time) / (week_length / 7), 0)
-                            for t in range(start_time, current_time, week_length)]
-            week = 0
-            for use, amount in uses:
-                while week < len(weekly_costs):
-                    if use.time < start_time + (week + 1) * week_length:
-                        t, c = weekly_costs[week]
-                        weekly_costs[week] = (t, c + amount.cost / 100)
-                        break
-                    week += 1
-
+        weekly_costs = calculate_weekly_costs(tracking_id)
+        if len(weekly_costs):
             # set the graph to have the right scale
             self.xmax = len(weekly_costs) * 7
             self.ymax = max([cost for _, cost in weekly_costs], default=15.9) * 1.25
@@ -417,6 +439,19 @@ class CostGraph(Graph):
             self.cost_plot.update_bar_width()
         else:
             self.cost_plot.points = []
+
+
+def calculate_goal_streak(goal):
+    current_time = int(time.time())
+    uses = Repository.instance.get_uses_from_time_period(0, current_time, goal.substance_tracking_id)
+    for i, (use, amount) in enumerate(reversed(uses)):
+        if amount.amount > goal.value or i == len(uses) - 1:
+            # The user failed their goal here
+            streak_length = int((current_time - use.time) // (24 * 60 * 60))
+            if streak_length == 1:
+                return str(streak_length) + " day"
+            else:
+                return str(streak_length) + " days"
 
 
 class GoalsScreen(Screen):
@@ -444,17 +479,7 @@ class GoalsScreen(Screen):
             datetime.datetime.utcfromtimestamp(goal.time_set).strftime("%d/%m/%Y")
 
         # Display for how long they've met their target
-        current_time = int(time.time())
-        uses = Repository.instance.get_uses_from_time_period(0, current_time, goal.substance_tracking_id)
-        for i, (use, amount) in enumerate(reversed(uses)):
-            if amount.amount > goal.value or i == len(uses) - 1:
-                # The user failed their goal here
-                streak_length = int((current_time - use.time) // (24 * 60 * 60))
-                if streak_length == 1:
-                    self.total_days = str(streak_length) + " day"
-                else:
-                    self.total_days = str(streak_length) + " days"
-                break
+        self.total_days = calculate_goal_streak(goal)
 
     def set_default_values(self):
         self.target_substance = "None"
@@ -511,7 +536,7 @@ class AddictionRecovery(App):
             for substance, tracking in substances:
                 AddictionRecovery.substance_tracking_ids[substance.name] = tracking.id
 
-        AddictionRecovery.screens["menu"].update_image()
+        AddictionRecovery.screens["menu"].update_page()
 
     def on_stop(self):
         self.save_and_close()
