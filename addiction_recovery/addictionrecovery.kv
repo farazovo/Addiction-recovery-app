@@ -79,11 +79,14 @@
 
     GridLayout:
         cols:1
-
+        padding: 20
         size: root.width, root.height
 
         Label:
             text: "Please enter your intake below:"
+            font_size: 20
+            size_hint_y: None
+            height: 80
 
         GridLayout:
             cols:2
@@ -94,6 +97,7 @@
 
                 GridLayout:
                     cols:2
+                    spacing: 5
 
                     Label:
                         text: "Select the Substance:"
@@ -123,16 +127,22 @@
 
         GridLayout:
             cols:2
+            spacing: 40
+            padding: 10
 
             Label:
                 text: "Presets:"
 
             SubstancePresets:
+                spacing: 5
                 rows: 4
                 cols: 1
 
         GridLayout:
             cols:2
+            spacing: 5
+            size_hint_y: None
+            height: 40
 
             Button:
                 text: "Return to Menu"
@@ -195,46 +205,62 @@
 <GraphScreen>:
     GridLayout:
         cols:1
+        padding: 20
+        spacing: 20
+
+        GraphSubstanceButtons:
+            size_hint_y: None
+            height: 40
 
         SubstanceGraph
         CostGraph
 
-        GraphSubstanceButtons
-
         Button:
             text: "Return to Menu"
+            size_hint_y: None
+            size_hint_x: None
+            height: 40
+            width: 200
             on_press: root.manager.current = 'menu'
 
 <MenuScreen>:
     GridLayout:
-        rows:1
+        cols: 1
+        padding: 20
 
-        Image:
-            source: root.image_source
+        Label:
+            text: "Welcome to our Addiction Recovery App"
+            font_size: 20
+            size_hint_y: None
+            height: 80
 
         GridLayout:
-            cols:1
+            cols: 2
 
-            Label:
-                text: "Welcome to our Addiction Recovery App"
+            Image:
+                source: root.image_source
 
-            Button:
-                text: "Profile"
-                on_press: root.manager.current = 'profile'
+            GridLayout:
+                cols: 1
+                spacing: 5
 
-            Button:
-                text: "Goals"
-                on_press: root.manager.current = 'goals'
+                Button:
+                    text: "Profile"
+                    on_press: root.manager.current = 'profile'
 
-            Button:
-                text: "Logging"
-                on_press: root.manager.current = 'logging'
+                Button:
+                    text: "Goals"
+                    on_press: root.manager.current = 'goals'
+
+                Button:
+                    text: "Logging"
+                    on_press: root.manager.current = 'logging'
 
 
-            Button:
-                text: "Graphs"
-                on_press: root.manager.current = 'graph'
+                Button:
+                    text: "Graphs"
+                    on_press: root.manager.current = 'graph'
 
-            Button:
-                text: "Exit App"
-                on_press: app.stop()
+                Button:
+                    text: "Exit App"
+                    on_press: app.stop()
