@@ -37,11 +37,11 @@ class MenuScreen(Screen):
 
         # Show statistics
         goal = Repository.instance.get_goal(1)
+        self.goal_text = ""
         if goal:
-            self.goal_text = f"You've met your goal of {goal.value} for {calculate_goal_streak(goal)}"
-        else:
-            self.goal_text = ""
-        self.cost_text = ""
+            streak = calculate_goal_streak(goal)
+            if streak:
+                self.goal_text = f"You've met your goal of {goal.value} for {streak}"
         last_week_cost = 0
         for tracking_id in AddictionRecovery.substance_tracking_ids.values():
             weekly_costs = calculate_weekly_costs(tracking_id)
@@ -452,6 +452,7 @@ def calculate_goal_streak(goal):
                 return str(streak_length) + " day"
             else:
                 return str(streak_length) + " days"
+    return None
 
 
 class GoalsScreen(Screen):
@@ -479,7 +480,9 @@ class GoalsScreen(Screen):
             datetime.datetime.utcfromtimestamp(goal.time_set).strftime("%d/%m/%Y")
 
         # Display for how long they've met their target
-        self.total_days = calculate_goal_streak(goal)
+        streak = calculate_goal_streak(goal)
+        if streak:
+            self.total_days = streak
 
     def set_default_values(self):
         self.target_substance = "None"
