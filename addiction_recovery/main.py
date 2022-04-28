@@ -337,6 +337,27 @@ class SubstanceGraph(Graph):
         self.goal_plot.points = [0]
         self.add_plot(self.goal_plot)
 
+    def calculate_graph(self, points):
+        # Calculates points on graph according to half-life
+        substance_id = Repository.instance.get_substance_tracking(AddictionRecovery.screens.get("graph").tracking_id).substance_id
+        substance = Repository.instance.get_substance(substance_id)
+        half_life = substance.half_life
+        half_life /= (24*60) #scale
+
+        p = points.copy()
+
+        for point in points:
+            # Each point is one 'use'
+            t = point[0]
+            amount = point[1]
+
+            while amount > 0.01:
+                t+=half_life
+                amount/=2
+                p.append((t, amount))
+
+        return p
+
     def update_graph(self):
         # Determine when the last two weeks start and end
         current_time = int(time.time())
@@ -362,9 +383,9 @@ class SubstanceGraph(Graph):
         # Plot this week's and last week's substance uses
         # TODO: calculate amounts properly
         self.current_week_plot.points = \
-            [((use.time - one_week_time) / x_axis_scale, amount.amount) for use, amount in one_week_uses]
+            self.calculate_graph([((use.time - one_week_time) / x_axis_scale, amount.amount) for use, amount in one_week_uses])
         self.last_week_plot.points = \
-            [((use.time - two_week_time) / x_axis_scale, amount.amount) for use, amount in two_week_uses]
+            self.calculate_graph([((use.time - two_week_time) / x_axis_scale, amount.amount) for use, amount in two_week_uses])
 
         # set the graph to have the right scale
         self.xmax = week_length / x_axis_scale
