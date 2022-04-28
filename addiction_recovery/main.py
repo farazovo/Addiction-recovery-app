@@ -232,27 +232,48 @@ class SubstanceGraph(Graph):
 
     def __init__(self, **kwargs):
         super(SubstanceGraph, self).__init__(
-            xlabel='Time', ylabel='Amount',
+            xlabel='Time (days)', ylabel='Amount',
             x_ticks_minor=24, x_ticks_major=1,
             y_ticks_major=5,
             y_grid_label=True, x_grid_label=True,
             padding=5,
             x_grid=True, y_grid=True,
-            xmin=0, xmax=0,
-            ymin=0, ymax=0
+            xmin=0, xmax=1,
+            ymin=0, ymax=1
         )
 
         self.current_week_plot = MeshLinePlot(color=[0, 1, 0, 1])
-        self.current_week_plot.points = []
+        self.current_week_plot.points = [(0, 7*24*60*60)]
         self.add_plot(self.current_week_plot)
 
         self.last_week_plot = MeshLinePlot(color=[0, 1, 1, 1])
-        self.last_week_plot.points = []
+        self.last_week_plot.points = [(0, 7*24*60*60)]
         self.add_plot(self.last_week_plot)
 
         self.goal_plot = HBar(color=[1, 0, 0, 1])
-        self.goal_plot.points = []
+        self.goal_plot.points = [0]
         self.add_plot(self.goal_plot)
+
+    def calculate_graph(self, points):
+        # Calculates points on graph according to half-life
+        substance_id = Repository.instance.get_substance_tracking(AddictionRecovery.screens.get("graph").tracking_id).substance_id
+        substance = Repository.instance.get_substance(substance_id)
+        half_life = substance.half_life
+        half_life /= (24*60) #scale
+
+        p = points.copy()
+
+        for point in points:
+            # Each point is one 'use'
+            t = point[0]
+            amount = point[1]
+
+            while amount > 0.01:
+                t+=half_life
+                amount/=2
+                p.append((t, amount))
+
+        return p
 
     def update_graph(self):
         # Determine when the last two weeks start and end
@@ -282,9 +303,9 @@ class SubstanceGraph(Graph):
         # Plot this week's and last week's substance uses
         # TODO: calculate amounts properly
         self.current_week_plot.points = \
-            [((use.time - one_week_time) / x_axis_scale, amount.amount) for use, amount in one_week_uses]
+            self.calculate_graph([((use.time - one_week_time) / x_axis_scale, amount.amount) for use, amount in one_week_uses])
         self.last_week_plot.points = \
-            [((use.time - two_week_time) / x_axis_scale, amount.amount) for use, amount in two_week_uses]
+            self.calculate_graph([((use.time - two_week_time) / x_axis_scale, amount.amount) for use, amount in two_week_uses])
 
         # TODO: use actual goal value
         self.goal_plot.points = [15]
