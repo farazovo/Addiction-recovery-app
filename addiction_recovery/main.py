@@ -37,7 +37,7 @@ class MenuScreen(Screen):
 
         # Show statistics
         goal = Repository.instance.get_goal(1)
-        self.goal_text = ""
+        self.goal_text = "You haven't logged any substance use"
         if goal:
             streak = calculate_goal_streak(goal)
             if streak:
@@ -317,7 +317,7 @@ class SubstanceGraph(Graph):
         super(SubstanceGraph, self).__init__(
             xlabel='Time (days)', ylabel='Amount',
             x_ticks_minor=24, x_ticks_major=1,
-            y_ticks_major=5,
+            y_ticks_major=10,
             y_grid_label=True, x_grid_label=True,
             padding=5,
             x_grid=True, y_grid=True,
@@ -329,7 +329,7 @@ class SubstanceGraph(Graph):
         self.current_week_plot.points = [(0, 0)]
         self.add_plot(self.current_week_plot)
 
-        self.last_week_plot = MeshLinePlot(color=[0, 1, 1, 1])
+        self.last_week_plot = MeshLinePlot(color=[0, 1, 1, 0.7])
         self.last_week_plot.points = [(0, 0)]
         self.add_plot(self.last_week_plot)
 
@@ -337,33 +337,35 @@ class SubstanceGraph(Graph):
         self.goal_plot.points = [0]
         self.add_plot(self.goal_plot)
 
-    def calculate_graph(self, points):
+    @staticmethod
+    def calculate_graph(points, tracking_id):
         # Calculates points on graph according to half-life
-        substance_id = Repository.instance.get_substance_tracking(AddictionRecovery.screens.get("graph").tracking_id).substance_id
+        substance_id = Repository.instance.get_substance_tracking(tracking_id).substance_id
         substance = Repository.instance.get_substance(substance_id)
         half_life = substance.half_life
-        half_life /= (24*60) #scale
+        half_life /= (24 * 60)  # scale
 
-        p = points.copy()
-        acc = 0 # accumulation of drug amount
+        p = []
+        acc = 0  # accumulation of drug amount
 
-        for i in range(0,len(points)-1): # Each point is one 'use'
+        for i in range(len(points)):  # Each point is one 'use'
             t = points[i][0]
             amount = points[i][1] + acc
 
             while amount > 0.01:
-                if i < len(points)-1:
-                    if points[i+1][0] > t: # no accumulation
+                if i < len(points) - 1:
+                    if points[i + 1][0] > t:  # no accumulation
                         acc = 0
                     else:
                         # Accumulate drug
                         acc = amount
                         break
-                t+=half_life
-                amount/=2
+
+                dt = 1 / (24 * 60 / 5)
+                t += dt
+                amount *= 0.5 ** (dt / half_life)
                 p.append((t, amount))
 
-        p.sort()
         return p
 
     def update_graph(self):
@@ -389,11 +391,14 @@ class SubstanceGraph(Graph):
         x_axis_scale = 24 * 60 * 60
 
         # Plot this week's and last week's substance uses
-        # TODO: calculate amounts properly
         self.current_week_plot.points = \
-            self.calculate_graph([((use.time - one_week_time) / x_axis_scale, amount.amount) for use, amount in one_week_uses])
+            SubstanceGraph.calculate_graph(
+                [((use.time - one_week_time) / x_axis_scale, amount.amount) for use, amount in one_week_uses],
+                tracking_id)
         self.last_week_plot.points = \
-            self.calculate_graph([((use.time - two_week_time) / x_axis_scale, amount.amount) for use, amount in two_week_uses])
+            SubstanceGraph.calculate_graph(
+                [((use.time - two_week_time) / x_axis_scale, amount.amount) for use, amount in two_week_uses],
+                tracking_id)
 
         # set the graph to have the right scale
         self.xmax = week_length / x_axis_scale
@@ -473,10 +478,12 @@ class CostGraph(Graph):
 def calculate_goal_streak(goal):
     current_time = int(time.time())
     uses = Repository.instance.get_uses_from_time_period(0, current_time, goal.substance_tracking_id)
-    for i, (use, amount) in enumerate(reversed(uses)):
-        if amount.amount > goal.value or i == len(uses) - 1:
+    amounts = \
+        SubstanceGraph.calculate_graph([(use.time, amount.amount) for use, amount in uses], goal.substance_tracking_id)
+    for i, (t, amount) in enumerate(reversed(amounts)):
+        if amount > goal.value or i == len(uses) - 1:
             # The user failed their goal here
-            streak_length = int((current_time - use.time) // (24 * 60 * 60))
+            streak_length = int((current_time - t) // (24 * 60 * 60))
             if streak_length == 1:
                 return str(streak_length) + " day"
             else:
@@ -597,13 +604,55 @@ class AddictionRecovery(App):
 
     @staticmethod
     def create_substance_tracking():
-        for substance_name in ("Alcohol", "Coffee", "Nicotine"):
+        for substance_name, half_life in (("Alcohol", 240), ("Coffee", 480), ("Nicotine", 480)):
             # TODO: use actual half-life
-            substance = entities.Substance(substance_name, 1)
+            substance = entities.Substance(substance_name, half_life)
             substance_id = Repository.instance.create_substance(substance)
             substance_tracking = entities.SubstanceTracking(AddictionRecovery.current_person_id, substance_id)
             AddictionRecovery.substance_tracking_ids[substance_name] = \
                 Repository.instance.create_substance_tracking(substance_tracking)
+
+        # current_time = int(time.time())
+        # week_length = 7 * 24 * 60 * 60
+        # one_week_time = current_time - week_length
+        # two_week_time = one_week_time - week_length
+        # coffee = AddictionRecovery.substance_tracking_ids.get("Coffee")
+        # print(AddictionRecovery.substance_tracking_ids)
+        # small = Repository.instance.create_substance_amount(
+        #     entities.SubstanceAmount(5, 50, "small")
+        # )
+        # medium = Repository.instance.create_substance_amount(
+        #     entities.SubstanceAmount(10, 100, "medium")
+        # )
+        # large = Repository.instance.create_substance_amount(
+        #     entities.SubstanceAmount(20, 200, "large")
+        # )
+        #
+        # for i in (0.5, 0.1, 0.67, 0.98, 0.02):
+        #     Repository.instance.create_substance_use(
+        #         entities.SubstanceUse(coffee, small, int(one_week_time + i * week_length))
+        #     )
+        # for i in (0.4, 0.12, 0.82):
+        #     Repository.instance.create_substance_use(
+        #         entities.SubstanceUse(coffee, medium, int(one_week_time + i * week_length))
+        #     )
+        # for i in (0.28, 0.34, 0.77, 0.89):
+        #     Repository.instance.create_substance_use(
+        #         entities.SubstanceUse(coffee, large, int(one_week_time + i * week_length))
+        #     )
+        #
+        # for i in (0.01, 0.12, 0.24, 0.6345, 0.9345, 0.21):
+        #     Repository.instance.create_substance_use(
+        #         entities.SubstanceUse(coffee, small, int(two_week_time + i * week_length))
+        #     )
+        # for i in (0.2345, 0.11234, 0.65):
+        #     Repository.instance.create_substance_use(
+        #         entities.SubstanceUse(coffee, medium, int(two_week_time + i * week_length))
+        #     )
+        # for i in (0.586, 0.98, 0.23, 0.56):
+        #     Repository.instance.create_substance_use(
+        #         entities.SubstanceUse(coffee, large, int(two_week_time + i * week_length))
+        #     )
 
     @staticmethod
     def get_substance_name_from_tracking_id(tracking_id: int) -> str:
