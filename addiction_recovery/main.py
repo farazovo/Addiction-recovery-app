@@ -345,21 +345,23 @@ class SubstanceGraph(Graph):
         half_life /= (24*60) #scale
 
         p = points.copy()
-        acc = 0 # accumulation of drug check
-        for i in range(len(points)): # Each point is one 'use'
+        acc = 0 # accumulation of drug amount
+
+        for i in range(0,len(points)-1): # Each point is one 'use'
             t = points[i][0]
             amount = points[i][1] + acc
 
             while amount > 0.01:
-                if points[i+1][0] > t: # no accumulation
-                    t+=half_life
-                    amount/=2
-                    p.append((t, amount))
-                    acc = 0
-                else:
-                    # Accumulate drug
-                    acc = amount
-                    continue
+                if i < len(points)-1:
+                    if points[i+1][0] > t: # no accumulation
+                        acc = 0
+                    else:
+                        # Accumulate drug
+                        acc = amount
+                        break
+                t+=half_life
+                amount/=2
+                p.append((t, amount))
 
         p.sort()
         return p
