@@ -315,7 +315,7 @@ class SubstanceGraph(Graph):
 
     def __init__(self, **kwargs):
         super(SubstanceGraph, self).__init__(
-            xlabel='Time (days)', ylabel='Amount',
+            xlabel=" " * 28 + "Time (days)\nGreen - this week, Blue - last week, Red - goal", ylabel="Amount",
             x_ticks_minor=24, x_ticks_major=1,
             y_ticks_major=10,
             y_grid_label=True, x_grid_label=True,
@@ -448,7 +448,7 @@ class CostGraph(Graph):
 
     def __init__(self, **kwargs):
         super(CostGraph, self).__init__(
-            xlabel='Time (days)', ylabel='Money Spent (£)',
+            xlabel="Time (days)", ylabel="Money Spent (£)",
             x_ticks_minor=7, x_ticks_major=7,
             y_ticks_major=5,
             y_grid_label=True, x_grid_label=True,
